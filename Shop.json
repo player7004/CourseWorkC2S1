@@ -1,0 +1,164 @@
+{
+  "Objects": [
+    {
+      "Type": "Object",
+      "OType": "EmptySpace",
+      "Position": [0, 0],
+      "Size": [10, 10]
+    },
+    {
+      "Type": "Object",
+      "OType": "Wall",
+      "Position": [0, 0],
+      "Size": [1, 10]
+    },
+    {
+      "Type": "Object",
+      "OType": "Wall",
+      "Position": [1, 9],
+      "Size": [9, 1]
+    },
+    {
+      "Type": "Object",
+      "OType": "Wall",
+      "Position": [9, 0],
+      "Size": [1, 9]
+    },
+    {
+      "Type": "Object",
+      "OType": "Wall",
+      "Position": [3, 0],
+      "Size": [6, 1]
+    },
+    {
+      "Type": "Object",
+      "OType": "Stand",
+      "Position": [2, 4],
+      "Size": [1, 4],
+      "Content" : [
+        {
+          "Type": "Product",
+          "Price": 78,
+          "PType": "Milk",
+          "Attractiveness": 0.1
+        },
+        {
+          "Type": "Product",
+          "Price": 94,
+          "PType": "Milk",
+          "Attractiveness": 0.8
+        },
+        {
+          "Type": "Product",
+          "Price": 60,
+          "PType": "Milk",
+          "Attractiveness": 0.5
+        },
+        {
+          "Type": "Product",
+          "Price": 90,
+          "PType": "Milk",
+          "Attractiveness": 1
+        },
+        {
+          "Type": "Product",
+          "Price": 54,
+          "PType": "Milk",
+          "Attractiveness": 0.3
+        },
+        {
+          "Type": "Product",
+          "Price": 34,
+          "PType": "Eggs",
+          "Attractiveness": 0.9
+        },
+        {
+          "Type": "Product",
+          "Price": 45,
+          "PType": "Eggs",
+          "Attractiveness": 0.5
+        },
+        {
+          "Type": "Product",
+          "Price": 59,
+          "PType": "Eggs",
+          "Attractiveness": 1
+        }
+      ]
+    },
+    {
+      "Type": "Object",
+      "OType": "Stand",
+      "Position": [5, 4],
+      "Size": [1, 4],
+      "Content" : [
+
+      ]
+    },
+    {
+      "Type": "Object",
+      "OType": "Stand",
+      "Position": [7, 4],
+      "Size": [1, 4],
+      "Content" : [
+
+      ]
+    },
+    {
+      "Type": "Object",
+      "OType": "Stand",
+      "Position": [5, 2],
+      "Size": [3, 1],
+      "Content" : [
+
+      ]
+    },
+    {
+      "Type": "Object",
+      "OType": "CashBox",
+      "Position": [3, 2],
+      "Size": [2, 1]
+    },
+    {
+      "Type": "Object",
+      "OType": "Door",
+      "Position": [1, 0],
+      "Size": [2, 1]
+    }
+  ],
+  "Humans": [
+    {
+      "Name": "Artyom",
+      "ToBuyList": [
+        {
+          "Type": "Product",
+          "Price": 90,
+          "PType": "Milk",
+          "Attractiveness": 0.3
+        },
+        {
+          "Type": "Product",
+          "Price": 64,
+          "PType": "Eggs",
+          "Attractiveness": 0.9
+        }
+      ],
+      "Way" : [
+        [1, 0], 
+        [1, 8],
+        [6, 8],
+        [6, 5],
+        [6, 3],
+        [3, 3],
+        [2, 3],
+        [2, 0]
+      ]
+    },
+    {
+      "Name": "Igor"
+    },
+    {
+      "Name": "Pasha"
+    }
+  ]
+}

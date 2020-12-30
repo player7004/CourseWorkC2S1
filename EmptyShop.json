@@ -1,0 +1,65 @@
+{
+  "Objects": [
+    {
+      "Type": "Object",
+      "OType": "EmptySpace",
+      "Position": [0, 0],
+      "Size": [10, 10]
+    },
+    {
+      "Type": "Object",
+      "OType": "Wall",
+      "Position": [0, 0],
+      "Size": [1, 10]
+    },
+    {
+      "Type": "Object",
+      "OType": "Wall",
+      "Position": [1, 9],
+      "Size": [9, 1]
+    },
+    {
+      "Type": "Object",
+      "OType": "Wall",
+      "Position": [9, 0],
+      "Size": [1, 9]
+    },
+    {
+      "Type": "Object",
+      "OType": "Wall",
+      "Position": [3, 0],
+      "Size": [6, 1]
+    },
+    {
+      "Type": "Object",
+      "OType": "Door",
+      "Position": [1, 0],
+      "Size": [2, 1]
+    }
+  ],
+  "Humans": [
+    {
+      "Name": "Artyom",
+      "ToBuyList": [
+        {
+          "Type": "Product",
+          "Price": 90,
+          "PType": "Milk",
+          "Attractiveness": 0.3
+        },
+        {
+          "Type": "Product",
+          "Price": 64,
+          "PType": "Eggs",
+          "Attractiveness": 0.9
+        }
+      ]
+    },
+    {
+      "Name": "Igor"
+    },
+    {
+      "Name": "Pasha"
+    }
+  ]
+}
