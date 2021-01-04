@@ -36,30 +36,5 @@
       "Position": [1, 0],
       "Size": [2, 1]
     }
-  ],
-  "Humans": [
-    {
-      "Name": "Artyom",
-      "ToBuyList": [
-        {
-          "Type": "Product",
-          "Price": 90,
-          "PType": "Milk",
-          "Attractiveness": 0.3
-        },
-        {
-          "Type": "Product",
-          "Price": 64,
-          "PType": "Eggs",
-          "Attractiveness": 0.9
-        }
-      ]
-    },
-    {
-      "Name": "Igor"
-    },
-    {
-      "Name": "Pasha"
-    }
   ]
 }

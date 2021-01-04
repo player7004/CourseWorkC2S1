@@ -3,6 +3,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <string>
+#include <iostream>
 
 enum class Entities
 {
@@ -10,6 +12,8 @@ enum class Entities
     Object,
     // Продукт
     Product,
+    // Неопределённый
+    Undefined
 };
 
 // Типы объектов
@@ -26,7 +30,9 @@ enum class Objects
     // Человек
     Human,
     // Дверь
-    Door
+    Door,
+    // Непоределённый
+    Undefined
 };
 
 // Типы Продуктов
@@ -57,8 +63,17 @@ enum class Products
     // Яблоки
     Apples,
     // Лимоны
-    Lemon
+    Lemon,
+    // Неопределённый
+    Undefined
 };
+
+namespace std {
+    std::string to_string(const Entities& type);
+    std::string to_string(const Objects& otype);
+    std::string to_string(const Products& ptype);
+}
+
 
 class Product {
 protected:
@@ -72,12 +87,13 @@ protected:
     float Attractiveness;
 public:
     explicit Product(
-        const Products& ptype = Products::Lemon,
+        const Products& ptype = Products::Undefined,
         unsigned short price = 100,
         float attractiveness = 1);
     Products getPType() const;
     unsigned short getPrice() const;
     float getAttractiveness() const;
+    friend std::ostream& operator<<(std::ostream& stream,const Product& prod);
 };
 
 class Object {
@@ -96,38 +112,39 @@ class Object {
     std::vector<Product>* Content;
     // Кол-во денег
     unsigned int Cash;
-    public:
+public:
     explicit Object(const std::pair<unsigned short, unsigned short>& position=std::pair<unsigned short, unsigned short>{0, 0},
                     const std::pair<unsigned short, unsigned short>& size=std::pair<unsigned short, unsigned short>{1, 1},
-                    const Objects& otype=Objects::Wall,
-                    const char& symbol = 'W',
+                    const Objects& otype=Objects::Undefined,
+                    const char& symbol = 'U',
                     std::vector<Product>* content = nullptr);
     std::pair<unsigned short, unsigned short> getPosition() const;
     std::pair<unsigned short, unsigned short> getSize() const;
     Objects getOType() const;
     char getSymbol() const;
+    friend std::ostream& operator<<(std::ostream& stream, const Object& obj);
+    const std::vector<Product>* getContent() const;
+    unsigned int getCash() const;
 };
 
 class Human: public Object {
 private:
     std::string Name;
-    std::vector<Product>* ToBuyList;
     std::vector<Product>* TakenProducts;
     std::vector<std::pair<unsigned short, unsigned short>>* Way;
 public:
     Human(
-        const std::string name,
+        const std::string& name,
         const std::pair<unsigned short, unsigned short>& position,
         const std::pair<unsigned short, unsigned short>& size,
         std::vector<Product>* tobuylist = nullptr,
-        std::vector<Product>* takenproducts = nullptr,
         std::vector<std::pair<unsigned short, unsigned short>>* way = nullptr
     );
-    const std::vector<Product>* getToBuyList() const;
     const std::vector<Product>* getTakenProducts() const;
     void updateTakenProducts(const Product& product);
     void deleteFromToBuyList(const Product& product);
     const std::vector<std::pair<unsigned short, unsigned short>>* getWay() const;
     std::pair<unsigned short, unsigned short> getPos(const int& ind) const;
     std::string getName() const;
+    friend std::ostream& operator<<(std::ostream& stream, const Human& hum);
 };
