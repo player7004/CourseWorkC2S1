@@ -109,7 +109,7 @@ class Object {
     // Символ
     char Symbol;
     // Внутренности
-    std::vector<Product>* Content;
+    std::vector<Product> Content;
     // Кол-во денег
     unsigned int Cash;
 public:
@@ -117,7 +117,7 @@ public:
                     const std::pair<unsigned short, unsigned short>& size=std::pair<unsigned short, unsigned short>{1, 1},
                     const Objects& otype=Objects::Undefined,
                     const char& symbol = 'U',
-                    std::vector<Product>* content = nullptr);
+                    std::vector<Product> content = std::vector<Product>());
     std::pair<unsigned short, unsigned short> getPosition() const;
     std::pair<unsigned short, unsigned short> getSize() const;
     Objects getOType() const;
@@ -130,16 +130,17 @@ public:
 class Human: public Object {
 private:
     std::string Name;
-    std::vector<Product>* TakenProducts;
-    std::vector<std::pair<unsigned short, unsigned short>>* Way;
+    std::vector<Product> TakenProducts;
+    std::vector<std::pair<unsigned short, unsigned short>> Way;
 public:
     Human(
         const std::string& name,
         const std::pair<unsigned short, unsigned short>& position,
         const std::pair<unsigned short, unsigned short>& size,
-        std::vector<Product>* tobuylist = nullptr,
-        std::vector<std::pair<unsigned short, unsigned short>>* way = nullptr
+        std::vector<Product> tobuylist = std::vector<Product>(),
+        std::vector<std::pair<unsigned short, unsigned short>> way = std::vector<std::pair<unsigned short, unsigned short>>()
     );
+    Human();
     const std::vector<Product>* getTakenProducts() const;
     void updateTakenProducts(const Product& product);
     void deleteFromToBuyList(const Product& product);

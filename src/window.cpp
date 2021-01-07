@@ -127,34 +127,36 @@ namespace Ui
     {
         setupUi(this);
         this->show();
-        // connect(LoadShopButton, &QPushButton::clicked, [this]() {
-        //     this->TheHuman = nullptr;
-        //     this->ShopMap->clear();
-        //     QString str = QFileDialog::getOpenFileName(this, "Choose Shop file", "", "*.json");
-        //     this->map = Map(str.toStdString());
-        //     this->ShopStatus = map.getStatus();
-        //     this->printShop();
-        //     std::thread some([this] {
-        //         this->running = false;
-        //         std::this_thread::sleep_for(std::chrono::seconds(2));
-        //         this->running = true;
-        //         while (*this->ShopStatus != Statuses::NoMoreHumans)
-        //         {
-        //             while (this->running)
-        //             {
-        //                 TheHuman = map.getTheHuman();
-        //                 this->HumanNameLabel->setText(QString(TheHuman->getName().c_str()));
-        //                 printToBuyList();
-        //                 printTakenProducts();
-        //                 this->map.rebuildMap();
-        //                 this->printShop();
-        //                 this->ShopStatus = this->map.getStatus();
-        //                 std::this_thread::sleep_for(std::chrono::seconds(2));
-        //             }
-        //         }
-        //     });
-        //     some.detach();
-        // });
+        running = false;
+        TheHuman = nullptr;
+        connect(LoadShopButton, &QPushButton::clicked, [this]{
+            resetWindow();
+            std::string str = QFileDialog::getOpenFileName(this, "Choose Shop file", "", "*.json").toStdString();
+            map = Map(str);
+            MapStatus = map.parse();
+            if (MapStatus != MapStatuses::Parsed) {
+                return;
+            }
+            MapStatus = map.create();
+            if (MapStatus != MapStatuses::Created) {
+                return;
+            }
+            printShop();
+            std::thread some([this]{
+                this->ThreadStatus = ThreadStatuses::Running;
+                while (this->ThreadStatus == ThreadStatuses::Running) {
+                    if (this->running) {
+                        this->printShop();
+                    } else {
+                        this->clearAll();
+                        this->ShopMap->addItem(QString("false"));
+                    }
+                    std::this_thread::sleep_for(std::chrono::seconds(2));
+                }
+                this->ThreadStatus = ThreadStatuses::Sleeping;
+            });
+            some.detach();
+        });
         connect(PauseButton, &QPushButton::clicked, [this]() {
             this->running = false;
         });
@@ -163,33 +165,34 @@ namespace Ui
         });
         connect(QuitButton, &QPushButton::clicked, [this]() {
             this->running = false;
+            this->resetWindow();
             this->close();
         });
     }
-    // void MainWindow::printShop()
-    // {
-    //     ShopMap->clear();
-    //     if (*ShopStatus != Statuses::Empty and *ShopStatus != Statuses::Loaded)
-    //     {
-    //         C A Mp = map.getMap();
-    //         for (const auto &str : Mp)
-    //         {
-    //             ShopMap->addItem(QString::fromUtf8(str.c_str()));
-    //         }
-    //     }
-    //     else
-    //     {
-    //         if (*ShopStatus == Statuses::Empty)
-    //         {
-    //             loadErrorWindow("Can`t load file.", "Check it or chose another.");
-    //         }
-    //         else if (*ShopStatus == Statuses::Loaded)
-    //         {
-    //             loadErrorWindow("Can`t create Shop from this file.", "Check it or chose another.");
-    //         }
-    //         std::cerr << "Shop isn`t loaded" << EL;
-    //     }
-    // }
+
+    void Window::printShop() {
+        clearAll();
+        const std::vector<std::vector<char>>* const thing = map.getCurrentMap();
+        for (std::vector<std::vector<char>>::const_iterator i = thing->begin(); i != thing->end(); i++) {
+            std::string result;
+            for (std::vector<char>::const_iterator j = i->begin(); j != i->end(); j++) {
+                result += *j;
+            }
+            ShopMap->addItem(QString(result.c_str()));
+        }
+    }
+
+    void Window::resetWindow() {
+        TheHuman = nullptr;
+        map = Map();
+        running = false;
+        MapStatus = MapStatuses::NotInitialized;
+        if (ThreadStatus == ThreadStatuses::Running) {
+            ThreadStatus = ThreadStatuses::Stopping;
+            while (ThreadStatus != ThreadStatuses::Sleeping);
+        }
+        clearAll();
+    }
 
     void Window::loadErrorWindow(const std::string &text, const std::string &hint)
     {
@@ -320,4 +323,11 @@ namespace Ui
     //     result += " Price: " + std::to_string(val.getPrice()) + " Attractiveness: " + std::to_string(int(val.getAttractiveness() * 100));
     //     return result;
     // }
+
+    void Window::clearAll() {
+        ShopMap->clear();
+        ToBuyList->clear();
+        TakenProductsList->clear();
+    }
+
 } // namespace Ui

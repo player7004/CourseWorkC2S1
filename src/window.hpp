@@ -51,30 +51,46 @@ public:
     void retranslateUi(QMainWindow *MainWindow);
 };
 
+enum class ThreadStatuses {
+    // Спит
+    Sleeping,
+    // Работает
+    Running,
+    // Подан сигнал на остановка
+    Stopping
+};
+
 namespace Ui
 {
     class Window : public Ui_MainWindow
     {
-    public:
-        // Статус магазина
-        //Statuses *ShopStatus = nullptr;
+    private:
+        // Очищает ShopMap
+        // Очищает ToBuyList
+        // Очищает TakenProducts
+        void clearAll();
+        // Используется для полной остановки магазина
+        // Например при смене файла
+        void resetWindow();
+        MapStatuses MapStatus;
+        ThreadStatuses ThreadStatus;
         // Карта
-        //Map map = Map();
+        Map map = Map();
         // Показывает Можно ли дальше ходить или нет
-        bool running = false;
+        bool running;
+        // Выводит магазин в Его карту
+        void printShop();
+        // Указатель на текущего человека
+        const Human* TheHuman;
+    public:
         // Выводит окно ошибки
         static void loadErrorWindow(const std::string &text, const std::string &hint);
-        // Выводит магазин в Его карту
-        // void printShop();
-        // //
-        // //const Human* TheHuman = nullptr;
-        // //
         // void printToBuyList();
-        // //
+        //
         // void printTakenProducts();
-        // //
+        // 
         // static std::string getProductAsSTR(const Product &val);
-        // // Конструктор
+        // Конструктор
         Window();
     };
 } // namespace Ui

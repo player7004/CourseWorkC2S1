@@ -68,13 +68,14 @@ Object::Object(const std::pair<unsigned short, unsigned short>& position,
                     const std::pair<unsigned short, unsigned short>& size,
                     const Objects& otype,
                     const char& symbol,
-                    std::vector<Product>* content) {
+                    std::vector<Product> content) {
                         Type = Entities::Object;
                         Position = position;
                         Size = size;
                         OType = otype;
                         Symbol = symbol;
                         Content = content;
+                        Cash = 0;
 }
 
 std::pair<unsigned short, unsigned short> Object::getPosition() const {
@@ -93,7 +94,7 @@ char Object::getSymbol() const {
 }
 
 const std::vector<Product>* Object::getContent() const {
-    return Content;
+    return &Content;
 }
 
 unsigned int Object::getCash() const {
@@ -158,8 +159,8 @@ float Product::getAttractiveness() const {
 Human::Human(const std::string& name,
         const std::pair<unsigned short, unsigned short>& position,
         const std::pair<unsigned short, unsigned short>& size,
-        std::vector<Product>* tobuylist,
-        std::vector<std::pair<unsigned short, unsigned short>>* way) :Object(
+        std::vector<Product> tobuylist,
+        std::vector<std::pair<unsigned short, unsigned short>> way) :Object(
             position,
             size,
             Objects::Human,
@@ -168,21 +169,23 @@ Human::Human(const std::string& name,
         ) {
             Name = name;
             Way = way;
-            TakenProducts = new std::vector<Product>;
+            TakenProducts = std::vector<Product>();
 }
 
+Human::Human(): Object() {};
+
 const std::vector<Product>* Human::getTakenProducts() const {
-    return TakenProducts;
+    return &TakenProducts;
 }
 
 void Human::updateTakenProducts(const Product& product) {
-    TakenProducts->push_back(product);
+    TakenProducts.push_back(product);
 }
 
 void Human::deleteFromToBuyList(const Product& product) {
     int ind = 0;
     bool found = false;
-    for (auto i = Content->begin(); i != Content->end(); i++) {
+    for (auto i = Content.begin(); i != Content.end(); i++) {
         if (i->getPType() == product.getPType()) {
             found = true;
             break;
@@ -190,18 +193,18 @@ void Human::deleteFromToBuyList(const Product& product) {
         ind++;
     }
     if (found) {
-        Content->erase(Content->begin() + ind);
+        Content.erase(Content.begin() + ind);
     }
 }
 
 const std::vector<std::pair<unsigned short, unsigned short>>* Human::getWay() const {
-    return Way;
+    return &Way;
 }
 
 std::pair<unsigned short, unsigned short> Human::getPos(const int& ind) const {
-    if (ind < Way->size()) {
+    if (ind < Way.size()) {
 
-        return *(Way->begin() + ind);
+        return *(Way.begin() + ind);
     } else {
         return std::pair<unsigned short, unsigned short>{0, 0};
     }

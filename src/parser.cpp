@@ -4,11 +4,11 @@ Parser::Parser(const std::string& filename) {
     FileName = filename;
 }
 
-std::vector<Human*> Parser::getHumans() const {
+std::vector<Human> Parser::getHumans() const {
     return Humans;
 }
 
-std::vector<Object*> Parser::getObjects() const {
+std::vector<Object> Parser::getObjects() const {
     return AllObjects;
 }
 
@@ -90,8 +90,8 @@ Products Parser::getProductType(const std::string& ptype) {
     }
 }
 
-std::vector<Product>* Parser::getProducts(const Json::Value& val) {
-    std::vector<Product>* result = new std::vector<Product>;
+std::vector<Product> Parser::getProducts(const Json::Value& val) {
+    std::vector<Product> result;
     for (const auto& obj: val) {
         Entities type;
         Products ptype;
@@ -130,16 +130,16 @@ std::vector<Product>* Parser::getProducts(const Json::Value& val) {
             std::cerr << "Type is Undefined or an Object" << std::endl;
             continue;
         }
-        result->emplace_back(Product(ptype, price, attractiveness));
+        result.emplace_back(Product(ptype, price, attractiveness));
     }
     return result;
 }
 
-std::vector<std::pair<unsigned short, unsigned short>>* Parser::getWay(const Json::Value& way) {
-    std::vector<std::pair<unsigned short, unsigned short>>* result = new std::vector<std::pair<unsigned short, unsigned short>>;
+std::vector<std::pair<unsigned short, unsigned short>> Parser::getWay(const Json::Value& way) {
+    std::vector<std::pair<unsigned short, unsigned short>> result = std::vector<std::pair<unsigned short, unsigned short>>();
     for (const auto& obj: way) {
         if (obj[0] and obj[1]) {
-            result->emplace_back(std::pair<unsigned short, unsigned short>{obj[0].asUInt(), obj[1].asUInt()});
+            result.emplace_back(std::pair<unsigned short, unsigned short>{obj[0].asUInt(), obj[1].asUInt()});
         }
     }
     return result;
@@ -175,7 +175,7 @@ bool Parser::parse() {
         std::pair<unsigned short, unsigned short> pos;
         std::pair<unsigned short, unsigned short> size;
         char sym;
-        std::vector<Product>* products = nullptr;
+        std::vector<Product> products;
         // Берём тип сущности
         if (object["Type"]) {
             type = getEntityType(object["Type"].asString());
@@ -225,16 +225,7 @@ bool Parser::parse() {
             std::cerr << "Type is Undefined or a Product" << std::endl;
             continue;
         }
-        if (otype == Objects::Stand) {
-            try {
-                products->empty();
-            } catch (...) {
-                std::cerr << "Object type is Stand, but content incomplete" << std::endl;
-                continue;
-            };
-        }
-        Object* obj = new Object(pos, size, otype, sym, products);
-        AllObjects.push_back(obj);  
+        AllObjects.emplace_back(Object(pos, size, otype, sym, products));  
     }
     // Проходимся по людям
     for (const auto& human: humans) {
@@ -245,8 +236,8 @@ bool Parser::parse() {
         std::pair<unsigned short, unsigned short> pos{0, 0};
         std::pair<unsigned short, unsigned short> size{1, 1};
         char sym;
-        std::vector<Product>* products = nullptr;
-        std::vector<std::pair<unsigned short, unsigned short>>* way = nullptr;
+        std::vector<Product> products;
+        std::vector<std::pair<unsigned short, unsigned short>> way;
         // Берём тип сущности
         if (human["Type"]) {
             type = getEntityType(human["Type"].asString());
@@ -296,20 +287,23 @@ bool Parser::parse() {
             std::cerr << "Type is Undefined or a Product" << std::endl;
             continue;
         }
-        try {
-            products->empty();
-            way->empty();
-        } catch (...) {
+        if (products.empty() or way.empty() or name.empty()) {
             std::cerr << "Human incomplete" << std::endl;
             continue;
         }
-        if (!name.empty()) {
-            Human* obj = new Human(name, pos, size, products, way);
-            Humans.push_back(obj); 
-        } else {
-            std::cerr << "Human incomplete" << std::endl;
-            continue;
-        }
+        Humans.emplace_back(Human(name, pos, size, products, way)); 
     } 
     return true;
+}
+
+std::ostream& operator<<(std::ostream& stream, const Parser& parser) {
+    stream << "Humans: " << std::endl;
+    for (const auto& i: parser.getHumans()) {
+        stream << i;
+    }
+    stream << "Objects: " << std::endl;
+    for (const auto& i: parser.getObjects()) {
+        stream << i;
+    }
+    return stream;
 }
