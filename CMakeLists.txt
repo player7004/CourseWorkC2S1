@@ -16,9 +16,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 find_package(Threads REQUIRED)
 find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(JSONCPP jsoncpp)
-link_libraries(${JSONCPP_LIBRARIES})
 
 add_executable(CourseWork
             main.cpp
@@ -30,7 +27,10 @@ add_executable(CourseWork
             src/map.hpp
             src/parser.cpp
             src/parser.hpp
+            src/dist/jsoncpp.cpp
+            src/dist/json/json.h
+            src/dist/json/json-forwards.h
 )
 
 
-target_link_libraries(CourseWork PRIVATE Qt5::Widgets ${JSONCPP_LIBRARRIES} Threads::Threads)
+target_link_libraries(CourseWork PRIVATE Qt5::Widgets Threads::Threads)

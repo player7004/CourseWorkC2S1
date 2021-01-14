@@ -62,7 +62,6 @@ std::string to_string(const Products& ptype) {
     }
 }
 
-
 // Object
 Object::Object(const std::pair<unsigned short, unsigned short>& position,
                     const std::pair<unsigned short, unsigned short>& size,
@@ -186,7 +185,7 @@ void Human::deleteFromToBuyList(const Product& product) {
     int ind = 0;
     bool found = false;
     for (auto i = Content.begin(); i != Content.end(); i++) {
-        if (i->getPType() == product.getPType()) {
+        if (*i == product) {
             found = true;
             break;
         }
@@ -194,6 +193,16 @@ void Human::deleteFromToBuyList(const Product& product) {
     }
     if (found) {
         Content.erase(Content.begin() + ind);
+    }
+}
+
+void Human::deleteFromBuyList(const std::vector<Product>::const_iterator& product) {
+    try {
+        if (Content.cend() > product and Content.cbegin() < product) {
+            Content.erase(product);
+        }
+    } catch(...) {
+        return;
     }
 }
 
@@ -212,4 +221,28 @@ std::pair<unsigned short, unsigned short> Human::getPos(const int& ind) const {
 
 std::string Human::getName() const {
     return Name;
+}
+
+bool operator==(const Product& prod1, const Product& prod2) {
+    return ((prod1.getPType() == prod2.getPType()) and 
+    (prod1.getPrice() == prod2.getPrice()) and 
+    (prod1.getAttractiveness() == prod2.getAttractiveness()));
+};
+
+bool Human::inToBuyList(const Product& product) const {
+    for (const auto& prod: Content) {
+        if (product.getPType() == prod.getPType()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Human::inTakenProducts(const Product& product) const {
+    for (const auto& prod: TakenProducts) {
+        if (product == prod) {
+            return true;
+        }
+    }
+    return false;
 }

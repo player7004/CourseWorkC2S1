@@ -71,13 +71,13 @@ void Ui_MainWindow::setupUi(QMainWindow *MainWindow)
     MapLegendList->setFont(font);
     NicknameLabel = new QLabel(MAIN);
     NicknameLabel->setObjectName(QString::fromUtf8("NicknameLabel"));
-    NicknameLabel->setGeometry(QRect(718, 530, 81, 20));
+    NicknameLabel->setGeometry(QRect(718, 530, 80, 20));
     GitHubLabel = new QLabel(MAIN);
     GitHubLabel->setObjectName(QString::fromUtf8("GitHubLabel"));
-    GitHubLabel->setGeometry(QRect(580, 550, 221, 20));
+    GitHubLabel->setGeometry(QRect(603, 570, 221, 20));
     VKLabel = new QLabel(MAIN);
     VKLabel->setObjectName(QString::fromUtf8("VKLabel"));
-    VKLabel->setGeometry(QRect(610, 570, 191, 20));
+    VKLabel->setGeometry(QRect(628, 550, 191, 20));
     OthersLabel = new QLabel(MAIN);
     OthersLabel->setObjectName(QString::fromUtf8("OthersLabel"));
     OthersLabel->setGeometry(QRect(570, 340, 221, 20));
@@ -90,10 +90,13 @@ void Ui_MainWindow::setupUi(QMainWindow *MainWindow)
     ContinueButton->setGeometry(QRect(682, 370, 111, 28));
     LoadShopButton = new QPushButton(MAIN);
     LoadShopButton->setObjectName(QString::fromUtf8("LoadShopButton"));
-    LoadShopButton->setGeometry(QRect(570, 400, 223, 28));
+    LoadShopButton->setGeometry(QRect(570, 422, 223, 28));
     QuitButton = new QPushButton(MAIN);
     QuitButton->setObjectName(QString::fromUtf8("QuitButton"));
-    QuitButton->setGeometry(570, 430, 223, 28);
+    QuitButton->setGeometry(570, 452, 223, 28);
+    LogStatus = new QRadioButton(MAIN);
+    LogStatus->setObjectName(QString::fromUtf8("LogStatusRadioButton"));
+    LogStatus->setGeometry(570, 400, 200, 20);
     MainWindow->setCentralWidget(MAIN);
 
     retranslateUi(MainWindow);
@@ -119,6 +122,7 @@ void Ui_MainWindow::retranslateUi(QMainWindow *MainWindow)
     ContinueButton->setText(QCoreApplication::translate("MainWindow", "Continue", nullptr));
     LoadShopButton->setText(QCoreApplication::translate("MainWindow", "Load Shop", nullptr));
     QuitButton->setText(QCoreApplication::translate("MainWindow", "Quit", nullptr));
+    LogStatus->setText(QCoreApplication::translate("MainWindow", "Save result in file", nullptr));
 }
 
 namespace Ui
@@ -133,23 +137,23 @@ namespace Ui
             resetWindow();
             std::string str = QFileDialog::getOpenFileName(this, "Choose Shop file", "", "*.json").toStdString();
             map = Map(str);
-            MapStatus = map.parse();
-            if (MapStatus != MapStatuses::Parsed) {
-                return;
-            }
-            MapStatus = map.create();
-            if (MapStatus != MapStatuses::Created) {
-                return;
-            }
-            printShop();
+            MapStatus = MapStatuses::NotInitialized;
             std::thread some([this]{
+                this->running = true;
                 this->ThreadStatus = ThreadStatuses::Running;
                 while (this->ThreadStatus == ThreadStatuses::Running) {
                     if (this->running) {
+                        this->TheHuman = this->map.getCurrentHuman();
+                        this->MapStatus = this->map.rebuildMap(this->MapStatus);
                         this->printShop();
-                    } else {
-                        this->clearAll();
-                        this->ShopMap->addItem(QString("false"));
+                        this->printToBuyList();
+                        this->printTakenProducts();
+                        this->printHumanName();
+                        if (this->MapStatus == MapStatuses::Error) {
+                            this->ThreadStatus = ThreadStatuses::Stopping;
+                        } else if (this->MapStatus == MapStatuses::Done) {
+                            this->ThreadStatus = ThreadStatuses::Stopping;
+                        }
                     }
                     std::this_thread::sleep_for(std::chrono::seconds(2));
                 }
@@ -183,7 +187,6 @@ namespace Ui
     }
 
     void Window::resetWindow() {
-        TheHuman = nullptr;
         map = Map();
         running = false;
         MapStatus = MapStatuses::NotInitialized;
@@ -241,93 +244,46 @@ namespace Ui
         obj->show();
     }
 
-    // V MainWindow::printToBuyList()
-    // {
-    //     A list = TheHuman->getToBuyList();
-    //     ToBuyList->clear();
-    //     for (C A &obj : *list)
-    //     {
-    //         ToBuyList->addItem(QString(getProductAsSTR(obj).c_str()));
-    //     }
-    // }
+    void Window::printToBuyList() {
+        if (TheHuman == nullptr) {
+            return;
+        }
+        auto list = TheHuman->getContent();
+        ToBuyList->clear();
+        for (auto i = list->begin(); i != list ->end(); i++) {
+            std::string data = std::to_string(i->getPType()) + " Price: " + std::to_string(i->getPrice()) + " Attractiveness: " + std::to_string(int(i->getAttractiveness()*100));
+            ToBuyList->addItem(QString(data.c_str()));
+        }
+    }
 
-    // V MainWindow::printTakenProducts()
-    // {
-    //     A list = TheHuman->getTakenProducts();
-    //     TakenProductsList->clear();
-    //     for (C A &obj : *list)
-    //     {
-    //         TakenProductsList->addItem(QString(getProductAsSTR(obj).c_str()));
-    //     }
-    // }
+    void Window::printTakenProducts() {
+        if (TheHuman == nullptr) {
+            return;
+        }
+        auto list = TheHuman->getTakenProducts();
+        TakenProductsList->clear();
+        for (auto i = list->begin(); i != list->end(); i++) {
+            std::string data = std::to_string(i->getPType()) + " Price: " + std::to_string(i->getPrice()) + " Attractiveness: " + std::to_string(int(i->getAttractiveness()*100));
+            TakenProductsList->addItem(QString(data.c_str()));
+        }
+    }
 
-    // STR MainWindow::getProductAsSTR(C Product &val)
-    // {
-    //     STR result;
-    //     if (val.getPType() == Products::Milk)
-    //     {
-    //         result = "Milk";
-    //     }
-    //     else if (val.getPType() == Products::Bread)
-    //     {
-    //         result = "Bread";
-    //     }
-    //     else if (val.getPType() == Products::Beer)
-    //     {
-    //         result = "Beer";
-    //     }
-    //     else if (val.getPType() == Products::Cheese)
-    //     {
-    //         result = "Cheese";
-    //     }
-    //     else if (val.getPType() == Products::Eggs)
-    //     {
-    //         result = "Eggs";
-    //     }
-    //     else if (val.getPType() == Products::BuckWheat)
-    //     {
-    //         result = "Buckwheat";
-    //     }
-    //     else if (val.getPType() == Products::ToiletPaper)
-    //     {
-    //         result = "Toilet Paper";
-    //     }
-    //     else if (val.getPType() == Products::Meet)
-    //     {
-    //         result = "Meet";
-    //     }
-    //     else if (val.getPType() == Products::Fish)
-    //     {
-    //         result = "Fish";
-    //     }
-    //     else if (val.getPType() == Products::Butter)
-    //     {
-    //         result = "Butter";
-    //     }
-    //     else if (val.getPType() == Products::Tomato)
-    //     {
-    //         result = "Tomato";
-    //     }
-    //     else if (val.getPType() == Products::Apples)
-    //     {
-    //         result = "Apples";
-    //     }
-    //     else if (val.getPType() == Products::Lemon)
-    //     {
-    //         result = "Lemon";
-    //     }
-    //     else
-    //     {
-    //         result = "ToiletPaper";
-    //     }
-    //     result += " Price: " + std::to_string(val.getPrice()) + " Attractiveness: " + std::to_string(int(val.getAttractiveness() * 100));
-    //     return result;
-    // }
+    void Window::printHumanName() {
+        if (TheHuman == nullptr) {
+            HumanNameLabel->setText(QCoreApplication::translate("MainWindow", "HumanName", nullptr));
+            std::cout << TheHuman << std::endl;
+        } else {
+            HumanNameLabel->setText(QCoreApplication::translate("MainWindow", TheHuman->getName().c_str(), nullptr));
+            std::cout << TheHuman->getName() << std::endl;
+        }
+        HumanNameLabel->update();
+    };
 
     void Window::clearAll() {
         ShopMap->clear();
         ToBuyList->clear();
         TakenProductsList->clear();
+        TheHuman = nullptr;
     }
 
 } // namespace Ui

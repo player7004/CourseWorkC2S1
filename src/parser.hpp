@@ -1,7 +1,8 @@
 #pragma once
 
 #include "entity.hpp"
-#include <json/json.h>
+// #include <jsoncpp/json/json.h>
+#include "dist/json/json.h"
 #include <string>
 #include <vector>
 #include <ostream>

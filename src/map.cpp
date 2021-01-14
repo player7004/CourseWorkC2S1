@@ -44,6 +44,10 @@ void Map::clearMap() {
     ObjectMap.clear();
     CurrentHuman = Human();
     CurrentHumanIndex = std::vector<Human>::const_iterator();
+    CurrentHumanStatus = HumanStatuses::NotInitialized;
+    AroundCurrentHuman = std::vector<const Object*>{};
+    AroundCurrentHumanIndex = AroundCurrentHuman.cbegin();
+    CurrentWayIndex = std::vector<std::pair<unsigned short, unsigned short>>::const_iterator();
 }
 
 MapStatuses Map::create() {
@@ -72,7 +76,7 @@ MapStatuses Map::create() {
             unsigned short maxY = y + i.getSize().second;
             if (x > maxX and y > maxY) {
                 clearMap();
-                return MapStatuses::NotInitialized;
+                return MapStatuses::Error;
             }
             for (int Y = y; Y < maxY; Y++) {
                 for (int X = x; X < maxX; X++) {
@@ -83,12 +87,16 @@ MapStatuses Map::create() {
         }
     } catch (...) {
         clearMap();
-        return MapStatuses::NotInitialized;
+        return MapStatuses::Error;
     }
     CurrentMap = BaseMap;
-    CurrentHuman = Humans[0];
-    CurrentHumanIndex = Humans.begin();
-    CurrentHumanIndex++;
+    CurrentHumanStatus = HumanStatuses::NotInitialized;
+    CurrentHumanIndex = Humans.cbegin();
+    AroundCurrentHumanIndex = AroundCurrentHuman.cbegin();
+    // Инициализируем человека
+    if (Humans.empty()) {
+        return MapStatuses::Done;
+    }
     return MapStatuses::Created;
 }
 
@@ -127,5 +135,232 @@ const std::vector<Human>* Map::getHumans() const {
 }
 
 const Human* Map::getCurrentHuman() const {
-    return &CurrentHuman;
+    return  (CurrentHumanStatus == HumanStatuses::NotInitialized) ? nullptr: &CurrentHuman;
+}
+
+MapStatuses Map::rebuildMap(const MapStatuses& status) {
+    if (status == MapStatuses::NotInitialized) {
+        //  Инициализируем
+        return parse();
+    } else if (status == MapStatuses::Parsed) {
+        // Создаём карту
+        return create();
+    } else if (status == MapStatuses::Created) {
+        return MapStatuses::Working;
+    } else if (status == MapStatuses::Working) {
+        if (CurrentHumanStatus == HumanStatuses::NotInitialized) {
+            // Если не инициализирован - пытаемся инициализировать
+            // Если люди кончились - вырубаем
+            if (Humans.empty()) {
+                return MapStatuses::Done;
+            } else {
+                // Если прошлись уже по всем - готово
+                if (CurrentHumanIndex == Humans.cend()) {
+                    return MapStatuses::Done;
+                }
+                // Иначе инициализируем
+                CurrentHuman = Human(*CurrentHumanIndex);
+                CurrentHumanIndex++;
+                CurrentWayIndex = CurrentHuman.getWay()->cbegin();
+                CurrentHumanStatus = HumanStatuses::Initialized;
+                return MapStatuses::Working;
+            }
+        } else if (CurrentHumanStatus == HumanStatuses::Initialized) {
+            // Если человек инициализирован - ходим
+            CurrentMap = BaseMap;
+            CurrentMap[CurrentWayIndex->second][CurrentWayIndex->first] = CurrentHuman.getSymbol();
+            CurrentHumanStatus = HumanStatuses::Walking;
+            return MapStatuses::Working;
+        } else if (CurrentHumanStatus == HumanStatuses::Placed) {
+            // Смещаемся на шаг вперёд
+            CurrentWayIndex++;
+            // Если это конец - то путь кончен
+            if (CurrentWayIndex == CurrentHuman.getWay()->cend()) {
+                CurrentHumanStatus = HumanStatuses::WayIsDone;
+            } else {
+                // Иначе Ставим на эту позицию
+                CurrentMap = BaseMap;
+                CurrentMap[CurrentWayIndex->second][CurrentWayIndex->first] = CurrentHuman.getSymbol();
+                CurrentHumanStatus = HumanStatuses::Walking;
+            }
+            return MapStatuses::Working;
+        } else if (CurrentHumanStatus == HumanStatuses::Walking) {
+            // Добавить проверку на пустой tobuylist
+            // Смотрим объекты вокруг
+            Objects otype;
+            // Проверяем есть ли ещё объекты в TobuyList
+            // Если их нет - переходим в Bying
+            // Если есть - переходим в Looking
+            if (CurrentHuman.getContent()->empty()) {
+                otype = Objects::CashBox;
+                CurrentHumanStatus = HumanStatuses::Bying;
+            } else {
+                otype = Objects::Stand;
+            }
+            std::pair<unsigned short, unsigned short> pos;
+            if (CurrentWayIndex == CurrentHuman.getWay()->cbegin()) {
+                pos = *CurrentWayIndex;
+            } else {
+                pos = *(CurrentWayIndex - 1);
+            }
+			// Проверка tobuylist  и takenproducts  у currenthuman
+            // Добавляем
+            if (pos.first - 1 >= 0) {
+                AroundCurrentHuman.push_back(ObjectMap[pos.second][pos.first - 1]);
+            }
+            if (pos.first + 1 < ObjectMap[CurrentWayIndex->second].size()) {
+                AroundCurrentHuman.push_back(ObjectMap[pos.second][pos.first + 1]);
+            }
+            if (pos.second - 1 >= 0) {
+                AroundCurrentHuman.push_back(ObjectMap[pos.second - 1][pos.first]);
+            }
+            if (pos.second + 1 < ObjectMap.size()) {
+                AroundCurrentHuman.push_back(ObjectMap[pos.second + 1][pos.first]);
+            }
+            std::vector<std::vector<const Object*>::const_iterator> toDelete;
+            // Проверяем стенды они или нет и если нет - сохраняем итераторы для удаления
+            for (auto i = AroundCurrentHuman.cbegin(); i != AroundCurrentHuman.cend(); i++) {
+                auto obj = *i;
+                if (obj->getOType() != otype) {
+                    toDelete.push_back(i);
+                }
+            }
+            // Удаляем все НЕ стенды
+            for (const auto& i: toDelete) {
+                AroundCurrentHuman.erase(i);
+            }
+            //
+            if (AroundCurrentHuman.empty()) {
+            // Если стендов нет - идём дальше
+            // Иначе осматриваем их
+                CurrentHumanStatus = HumanStatuses::Placed;
+            } else {
+                AroundCurrentHumanIndex = AroundCurrentHuman.cbegin();
+                if (CurrentHuman.getContent()->empty()) {
+                    CurrentHumanStatus = HumanStatuses::Bying;
+                } else {
+                    CurrentHumanStatus = HumanStatuses::Looking;
+                }
+            }
+            return MapStatuses::Working;
+        } else if (CurrentHumanStatus == HumanStatuses::Looking) {
+			// Если список покупок пуст - возвращаемся искать стенды
+			if (CurrentHuman.getContent()->empty()) {
+				CurrentHumanStatus = HumanStatuses::Walking;
+				return MapStatuses::Working;
+			}
+			// Если Стенды рядом кончились - Двигаемся дальше
+            if (AroundCurrentHumanIndex == AroundCurrentHuman.cend()) {
+				CurrentHumanStatus = HumanStatuses::Placed;
+				return MapStatuses::Working;
+			}
+			auto obj = *AroundCurrentHumanIndex;
+            // Если случилось какое-то дерьмо
+            // То это дерьмо случилось
+            // АУФ
+            // Программу стоит выключить
+            if (obj->getOType() != Objects::Stand) {
+                clearMap();
+                return MapStatuses::Error;
+            }
+            // Продукты для удаленния
+            std::vector<std::vector<Product>::const_iterator> toDelete;
+            // Проходимся по списку покупок
+			for (auto tb = CurrentHuman.getContent()->cbegin(); tb != CurrentHuman.getContent()->cend(); tb++) {
+                // Берём все продукты нужного нам типа
+                std::vector<const Product*> available;
+                for (auto sc = obj->getContent()->cbegin(); sc != obj->getContent()->cend(); sc++) {
+                    if (sc->getPType() == tb->getPType()) {
+                        available.push_back(sc.base());
+                    }
+                }
+                // Если таких нет - продолжаем
+                if (available.empty()) {
+                    // Если не нашли нужного - идём дальше
+                    continue;
+                }
+                // Выделяем из этого списка подходящий нам
+                // Коеффициент нужного нам продукта
+                short ProductCoeff = tb->getPrice() * tb->getAttractiveness();
+                // Выбранный продукт
+                std::vector<const Product*>::const_iterator choosen = available.cbegin();
+                // Выбираем самый подходящий
+                // Самый близкий по модулю к исходному 
+                for (auto obj = available.cbegin() + 1; obj != available.cend(); obj++) {
+                    auto i = *obj.base();
+                    auto j = *choosen.base();
+                    short coeff = i->getPrice() * i->getAttractiveness();
+                    short currCoeff = j->getPrice() * i->getAttractiveness();
+                    if (fabs(ProductCoeff - coeff) < fabs(ProductCoeff - currCoeff)) {
+                        choosen = obj;
+                    }
+                }
+                CurrentHuman.updateTakenProducts(**choosen);
+                toDelete.push_back(tb);
+			}
+            // Нашли всё понравившееся
+            // Теперь смотрим объекты вокруг и с некоторым шансом берём их
+            for (const auto& i: toDelete) {
+                // Коеффициент. Чем больше - тем больше шанс взять продукт
+                // Если у продукта привлекательность меньше, то он даже не будет рассмотрен
+                float coeff = 0.5;
+                // В левую сторону
+                for (auto j = i; j != CurrentHuman.getContent()->cbegin() and coeff < 0.9; j--, coeff += 0.17) {
+                    if (!(CurrentHuman.inTakenProducts(*j)) and !(CurrentHuman.inToBuyList(*j))) {
+                        // Смотрим подходит продукт или нет
+                        if (j->getAttractiveness() < coeff) {
+                            continue;
+                        } else {
+                            if (j->getPrice() * j->getAttractiveness() > int(coeff*100) - rand()%100*(1-coeff)) {
+                                CurrentHuman.updateTakenProducts(*j);
+                            }
+                        }
+                    }
+                }
+                coeff = 0.5;
+                // В правую сторону
+                for (auto j = i; j != CurrentHuman.getContent()->cend() and coeff < 0.8; j++, coeff += 0.17) {
+                    if (!(CurrentHuman.inTakenProducts(*j)) and !(CurrentHuman.inToBuyList(*j))) {
+                        // Смотрим подходит продукт или нет
+                        if (j->getAttractiveness() < coeff) {
+                            continue;
+                        } else {
+                            if (j->getPrice() * j->getAttractiveness() > int(coeff*100) - rand()%100*(1-coeff)) {
+                                CurrentHuman.updateTakenProducts(*j);
+                            }
+                        }
+                    }
+                }
+                // Удаляем из списка покупок
+                CurrentHuman.deleteFromBuyList(i);
+            }
+            // Смещаемся на следующий 
+            AroundCurrentHumanIndex++;
+            return MapStatuses::Working;
+        } else if(CurrentHumanStatus == HumanStatuses::Bying) {
+            // Если Объекты вокруг кончились - двигаемся дальше
+            if (AroundCurrentHumanIndex == AroundCurrentHuman.cend()) {
+                CurrentHumanStatus = HumanStatuses::Placed;
+				return MapStatuses::Working;
+            }
+            auto cashbox = *AroundCurrentHumanIndex;
+            if (cashbox->getOType() != Objects::CashBox) {
+                clearMap();
+                return MapStatuses::Error;
+            }
+            std::vector<std::vector<Product>::const_iterator> toDelete;
+            for (auto i = CurrentHuman.getTakenProducts()->cbegin(); i != CurrentHuman.getTakenProducts()->cend(); i++) {
+                short price = i->getPrice();
+            }
+            // Доделать
+            // Смащаемся дальше
+            AroundCurrentHumanIndex++;
+        }
+    } else if (status == MapStatuses::Done) {
+        return MapStatuses::Done;
+    } else if (status == MapStatuses::Error) {
+        return MapStatuses::Error;
+    } else {
+        return MapStatuses::Error;
+    }
 }

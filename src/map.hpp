@@ -1,4 +1,5 @@
 #include "parser.hpp"
+#include <cmath>
 
 enum class MapStatuses {
     // Карта не инициализированна
@@ -10,6 +11,31 @@ enum class MapStatuses {
     Parsed,
     // BaseMap и CurrentMap созданы
     Created,
+    // Работает
+    // Люди ещё есть
+    Working,
+    // Завершено
+    // Люди кончились
+    Done
+};
+
+enum class HumanStatuses {
+    // Не ициализирован
+    NotInitialized,
+    // Инициализирован
+    Initialized,
+    // Поставлен на карту
+    Placed,
+    // Ходит
+    Walking,
+    // Лазит по стендам
+    Looking,
+    // Покупает
+    Bying,
+    // Кончился путь
+    WayIsDone,
+    // Всё купил
+    Bought
 };
 
 class Map {
@@ -18,16 +44,30 @@ private:
     std::vector<Human> Humans;
     // Объекты
     std::vector<Object> AllObjects;
+
+    
     // Базовая карта
     std::vector<std::vector<char>> BaseMap;
     // Текущая карта
     std::vector<std::vector<char>> CurrentMap;
     // Объектная карта
     std::vector<std::vector<const Object*>> ObjectMap;
+
+
     // Текущий человек
     Human CurrentHuman;
+    // Статус текущего человека
+    HumanStatuses CurrentHumanStatus;
     // Указатель на текущего человека
     std::vector<Human>::const_iterator CurrentHumanIndex;
+    // Указатель на путь текущего человека
+    std::vector<std::pair<unsigned short, unsigned short>>::const_iterator CurrentWayIndex;
+    // Объекты вокруг текущго человека
+    std::vector<const Object*> AroundCurrentHuman;
+    // Указатель на индекс объекта вокруг текущего человека
+    std::vector<const Object*>::const_iterator AroundCurrentHumanIndex;
+
+
     // Имя файла для чтения
     std::string FileName;
     // Очищает карту
@@ -60,4 +100,7 @@ public:
     friend std::ostream& operator<<(std::ostream& stream, const Map& map);
     // Возвращает указатель на текущего человека
     const Human* getCurrentHuman() const;
+    // Пересобирает карту 
+    // Делает следующий шаг
+    MapStatuses rebuildMap(const MapStatuses& status);
 };

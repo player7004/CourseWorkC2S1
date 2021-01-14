@@ -15,6 +15,7 @@
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QWidget>
+#include <QtWidgets/QRadioButton>
 #include <thread>
 #include <chrono>
 #include "map.hpp"
@@ -45,6 +46,7 @@ public:
     QPushButton *ContinueButton;
     QPushButton *LoadShopButton;
     QPushButton *QuitButton;
+    QRadioButton *LogStatus;
     // Инициализирует все объекты
     void setupUi(QMainWindow *MainWindow);
     // Выставляет всем объектам базовые значеня
@@ -82,14 +84,15 @@ namespace Ui
         void printShop();
         // Указатель на текущего человека
         const Human* TheHuman;
+        // Печатает список покупок человека
+        void printToBuyList();
+        // Печатает список взятых продуктов
+        void printTakenProducts();
+        // Меняет имя на Имя текущего человека
+        void printHumanName();
     public:
         // Выводит окно ошибки
         static void loadErrorWindow(const std::string &text, const std::string &hint);
-        // void printToBuyList();
-        //
-        // void printTakenProducts();
-        // 
-        // static std::string getProductAsSTR(const Product &val);
         // Конструктор
         Window();
     };

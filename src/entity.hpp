@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <exception>
 
 enum class Entities
 {
@@ -94,6 +95,7 @@ public:
     unsigned short getPrice() const;
     float getAttractiveness() const;
     friend std::ostream& operator<<(std::ostream& stream,const Product& prod);
+    friend bool operator==(const Product& prod1, const Product& prod2);
 };
 
 class Object {
@@ -129,8 +131,11 @@ public:
 
 class Human: public Object {
 private:
+    // Имя человека
     std::string Name;
+    // Список взятых продуктов
     std::vector<Product> TakenProducts;
+    // Путь человека
     std::vector<std::pair<unsigned short, unsigned short>> Way;
 public:
     Human(
@@ -141,9 +146,15 @@ public:
         std::vector<std::pair<unsigned short, unsigned short>> way = std::vector<std::pair<unsigned short, unsigned short>>()
     );
     Human();
+    // Смотрет есть ли такой объект в Tobuylist
+    bool inToBuyList(const Product& product) const;
+    bool inTakenProducts(const Product& product) const;
     const std::vector<Product>* getTakenProducts() const;
     void updateTakenProducts(const Product& product);
+    // Возможно устаревший
     void deleteFromToBuyList(const Product& product);
+    // Удалить элемент из вектора
+    void deleteFromBuyList(const std::vector<Product>::const_iterator& product);
     const std::vector<std::pair<unsigned short, unsigned short>>* getWay() const;
     std::pair<unsigned short, unsigned short> getPos(const int& ind) const;
     std::string getName() const;
