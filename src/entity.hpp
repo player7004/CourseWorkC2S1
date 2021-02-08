@@ -1,162 +1,126 @@
 #pragma once
 
 #include <iostream>
-#include <string>
+#include <QString>
 #include <vector>
-#include <string>
-#include <iostream>
+#include <set>
 #include <exception>
+#include "log.hpp"
 
-enum class Entities
-{
+
+const std::set<QString> Types {
     // Объект
-    Object,
+    "Object",
     // Продукт
-    Product,
-    // Неопределённый
-    Undefined
-};
-
-// Типы объектов
-enum class Objects
-{
-    // Стена
-    Wall,
-    // Проход
-    EmptySpace,
-    // Стенд с продуктами
-    Stand,
-    // Касса
-    CashBox,
+    "Product",
     // Человек
-    Human,
+    "Human"
+};
+
+const std::set<QString> OTypes{
+    // Стена
+    "Wall",
+    // Пустое место
+    "EmptySpace",
+    // Стенд
+    "Stand",
+    // Касса
+    "CashBox",
     // Дверь
-    Door,
-    // Непоределённый
-    Undefined
-};
-
-// Типы Продуктов
-enum class Products
-{
-    // Молоко
-    Milk,
-    // Хлеб
-    Bread,
-    // Пиво
-    Beer,
-    // Сыр
-    Cheese,
-    // Яйца
-    Eggs,
-    // Гречка
-    BuckWheat,
-    // Туалетка
-    ToiletPaper,
-    // Мясо
-    Meet,
-    // Рыба
-    Fish,
-    // Масло
-    Butter,
-    // Помидоры
-    Tomato,
-    // Яблоки
-    Apples,
-    // Лимоны
-    Lemon,
+    "Door",
     // Неопределённый
-    Undefined
+    "Undefinded"
 };
 
-namespace std {
-    std::string to_string(const Entities& type);
-    std::string to_string(const Objects& otype);
-    std::string to_string(const Products& ptype);
-}
+const std::set<QString> PTypes {
+    // Молоко
+    "Milk",
+    // Хлеб
+    "Bread",
+    // Пиво
+    "Beer",
+    // Сыр
+    "Cheese",
+    // Яйца
+    "Eggs",
+    // Гречка
+    "BuckWheat",
+    // Туалетка
+    "ToiletPaper",
+    // Мясо
+    "Meet",
+    // Рыба
+    "Fish",
+    // Масло
+    "Butter",
+    // Помидоры
+    "Tomato",
+    // Яблоки
+    "Apples",
+    // Лимоны
+    "Lemon",
+    // Неопределённый
+    "Undefined"
+};
 
+bool find(const std::set<const QString>& set, const QString& str);
 
 class Product {
-protected:
-    // Тип сущности
-    Entities Type;
-    // Тип продукта
-    Products PType;
-    // Цена
-    unsigned short Price;
-    // Привлекательность
-    float Attractiveness;
 public:
-    explicit Product(
-        const Products& ptype = Products::Undefined,
-        unsigned short price = 100,
-        float attractiveness = 1);
-    Products getPType() const;
-    unsigned short getPrice() const;
-    float getAttractiveness() const;
-    friend std::ostream& operator<<(std::ostream& stream,const Product& prod);
-    friend bool operator==(const Product& prod1, const Product& prod2);
+    // Тип объекта
+    QString Type{"Product"};
+    // Цена
+    ushort Price;
+    // Привлекательность
+    ushort Attractiveness;
+    // Тип продукта
+    QString PType;
+    // Название
+    QString Name;
+    // Конструктор
+    Product();
 };
 
 class Object {
-    protected:
-    // Тип сущности
-    Entities Type;
-    // Положение
-    std::pair<unsigned short, unsigned short> Position;
-    // Размер
-    std::pair<unsigned short, unsigned short> Size;
-    // Тип объекта
-    Objects OType;
-    // Символ
-    char Symbol;
-    // Внутренности
-    std::vector<Product> Content;
-    // Кол-во денег
-    unsigned int Cash;
 public:
-    explicit Object(const std::pair<unsigned short, unsigned short>& position=std::pair<unsigned short, unsigned short>{0, 0},
-                    const std::pair<unsigned short, unsigned short>& size=std::pair<unsigned short, unsigned short>{1, 1},
-                    const Objects& otype=Objects::Undefined,
-                    const char& symbol = 'U',
-                    std::vector<Product> content = std::vector<Product>());
-    std::pair<unsigned short, unsigned short> getPosition() const;
-    std::pair<unsigned short, unsigned short> getSize() const;
-    Objects getOType() const;
-    char getSymbol() const;
-    friend std::ostream& operator<<(std::ostream& stream, const Object& obj);
-    const std::vector<Product>* getContent() const;
-    unsigned int getCash() const;
+    // Тип объекта
+    const QString Type{"Object"};
+    // Позиция объекта
+    std::pair<ushort, ushort> Position;
+    // Размер объекта
+    std::pair<ushort, ushort> Size;
+    // Имя объекта
+    QString Name;
+    // Тип объекта
+    QString OType;
+    // Символ объекта
+    QChar Symbol;
+    // Содержимое
+    std::vector<Product> Content;
+    // Конструктор
+    Object();
 };
 
-class Human: public Object {
-private:
-    // Имя человека
-    std::string Name;
-    // Список взятых продуктов
-    std::vector<Product> TakenProducts;
-    // Путь человека
-    std::vector<std::pair<unsigned short, unsigned short>> Way;
+class Human {
 public:
-    Human(
-        const std::string& name,
-        const std::pair<unsigned short, unsigned short>& position,
-        const std::pair<unsigned short, unsigned short>& size,
-        std::vector<Product> tobuylist = std::vector<Product>(),
-        std::vector<std::pair<unsigned short, unsigned short>> way = std::vector<std::pair<unsigned short, unsigned short>>()
-    );
+    // Тип объекта
+    const QString Type{"Human"};
+    // Имя человека
+    QString Name;
+    // Символ человека
+    QChar Symbol;
+    // Путь человека
+    std::vector<std::pair<ushort, ushort>> Way;
+    // Список покупок
+    std::vector<Product> ToBuyList;
+    // Взятые продукты
+    std::vector<Product> TakenProducts;
+    // Конструктор
     Human();
-    // Смотрет есть ли такой объект в Tobuylist
-    bool inToBuyList(const Product& product) const;
-    bool inTakenProducts(const Product& product) const;
-    const std::vector<Product>* getTakenProducts() const;
-    void updateTakenProducts(const Product& product);
-    // Возможно устаревший
-    void deleteFromToBuyList(const Product& product);
-    // Удалить элемент из вектора
-    void deleteFromBuyList(const std::vector<Product>::const_iterator& product);
-    const std::vector<std::pair<unsigned short, unsigned short>>* getWay() const;
-    std::pair<unsigned short, unsigned short> getPos(const int& ind) const;
-    std::string getName() const;
-    friend std::ostream& operator<<(std::ostream& stream, const Human& hum);
 };
+
+namespace std {
+    std::string to_string(Object val);
+    std::string to_string(Product val);
+    std::string to_string(Human val);
+}

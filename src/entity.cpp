@@ -1,248 +1,75 @@
 #include "entity.hpp"
 
-namespace std {
-    std::string to_string(const Entities& type) {
-        if (type == Entities::Object) {
-            return "Object";
-        } else if(type == Entities::Product) {
-            return "Product";
-        } else {
-            return "Undefined";
-        }
-    }
-
-    std::string to_string(const Objects& otype) {
-    if (otype == Objects::Wall) {
-        return "Wall";
-    } else if (otype == Objects::CashBox) {
-        return "CashBox";
-    } else if (otype == Objects::Door) {
-        return "Door";
-    } else if (otype == Objects::EmptySpace) {
-        return "EmptySpace";
-    } else if (otype == Objects::Human) {
-        return "Human";
-    } else if (otype == Objects::Stand) {
-        return "Stand";
+bool find(const std::set<QString>& set, const QString& str) {
+    if (set.find(str) != set.cend()) {
+        return true;
     } else {
-        return "Undefined";
+        return false;
     }
-}
-
-std::string to_string(const Products& ptype) {
-    if (ptype == Products::Apples) {
-        return "Apples";
-    } else if (ptype == Products::Beer) {
-        return "Beer";
-    } else if (ptype == Products::Bread) {
-        return "Bread";
-    } else if (ptype == Products::BuckWheat) {
-        return "BuckWheat";
-    } else if (ptype == Products::Butter) {
-        return "Butter";
-    } else if (ptype == Products::Cheese) {
-        return "Cheese";
-    } else if (ptype == Products::Eggs) {
-        return "Eggs";
-    } else if (ptype == Products::Fish) {
-        return "Fish";
-    } else if (ptype == Products::Lemon) {
-        return "Lemon";
-    } else if (ptype == Products::Meet) {
-        return "Meet";
-    } else if (ptype == Products::Milk) {
-        return "Milk";
-    } else if (ptype == Products::ToiletPaper) {
-        return "ToiletPaper";
-    } else if (ptype == Products::Tomato) {
-        return "Tomato";
-    } else {
-        return "Undefined";
-            }
-    }
-}
-
-// Object
-Object::Object(const std::pair<unsigned short, unsigned short>& position,
-                    const std::pair<unsigned short, unsigned short>& size,
-                    const Objects& otype,
-                    const char& symbol,
-                    std::vector<Product> content) {
-                        Type = Entities::Object;
-                        Position = position;
-                        Size = size;
-                        OType = otype;
-                        Symbol = symbol;
-                        Content = content;
-                        Cash = 0;
-}
-
-std::pair<unsigned short, unsigned short> Object::getPosition() const {
-    return Position;
 };
 
-std::pair<unsigned short, unsigned short> Object::getSize() const {
-    return Size;
-};
-
-Objects Object::getOType() const {
-    return OType;
-}
-char Object::getSymbol() const {
-    return Symbol;
+Product::Product() {
+    Price = 0;
+    Attractiveness = 0;
+    PType = "Undefined";
+    Name = "Something";
 }
 
-const std::vector<Product>* Object::getContent() const {
-    return &Content;
+Object::Object() {
+    Position = std::pair<unsigned short, unsigned short>{0, 0};
+    Size = std::pair<unsigned short, unsigned short>{1, 1};
+    Name = "Something";
+    OType = "Undefined";
+    Symbol = 'U';
+    Content = std::vector<Product>{};
 }
 
-unsigned int Object::getCash() const {
-    return Cash;
+Human::Human() {
+    Name = "Someone";
+    Symbol = 'H';
+    Way = std::vector<std::pair<ushort, ushort>>{};
+    ToBuyList = std::vector<Product>{};
+    TakenProducts = std::vector<Product>{};
 }
 
-std::ostream& operator<<(std::ostream& stream, const Product& prod) {
-    stream << std::to_string(prod.getPType()) << " Price: " << prod.getPrice() << " Attractiveness: " << prod.getAttractiveness() << std::endl;
-    return stream;
-}
-
-std::ostream& operator<<(std::ostream& stream, const Object& obj) {
-    stream << "Position: (" << obj.getPosition().first << "," << obj.getPosition().second << ")" << std::endl
-           << "Size: (" << obj.getSize().first << "," << obj.getSize().second << ")" << std::endl
-           << "Type: Object" << std::endl
-           << "OType: " << std::to_string(obj.getOType()) << std::endl
-           << "Symbol: " << obj.getSymbol() << std::endl
-           << "Cash: " << obj.getCash() << std::endl
-           << "Content: " << std::endl;
-    if (obj.getContent() == nullptr) {
-        return stream;
+std::string std::to_string(Object val) {
+    string result = "Name: " + val.Name.toStdString() + "\n" + 
+    "Type: " + val.Type.toStdString() + "\n" +
+    "OType: " + val.OType.toStdString() + "\n" +
+    "Symbol: " + char(val.Symbol.unicode()) + "\n" +
+    "Position: " + "(" + std::to_string(val.Position.first) + ", " + std::to_string(val.Position.second) + ")\n" +
+    "Size: " + "(" + std::to_string(val.Size.first) + ", " + std::to_string(val.Size.second) + ")\n" +
+    "Content: \n" ;
+    for (const auto& i: val.Content) {
+        result += to_string(i) + "\n";
     }
-    for (std::vector<Product>::const_iterator i = obj.getContent()->begin(); i != obj.getContent()->end(); i++) {
-        stream << *i;
+    return result;
+}
+
+std::string std::to_string(Human val) {
+    string result = "Name: " + val.Name.toStdString() + "\n" +
+    "Type: " + val.Type.toStdString() + "\n" +
+    "Symbol: " + char(val.Symbol.unicode()) + "\n" +
+    "To Buy List: \n";
+    for (const auto& i: val.ToBuyList) {
+        result += to_string(i) + "\n";
     }
-    return stream;
-}
-
-std::ostream& operator<<(std::ostream& stream, const Human& hum) {
-    stream << "Name: " << hum.getName() << std::endl
-           << "Way: " << std::endl;
-    for (std::vector<std::pair<unsigned short, unsigned short>>::const_iterator i = hum.getWay()->begin(); i !=hum.getWay()->end(); i++) {
-        stream << "(" << i->first << "," << i->second << ")" << std::endl;
+    result += "Taken Products: \n";
+    for (const auto& i: val.TakenProducts) {
+        result += to_string(i) + "\n";
     }
-    stream << Object(hum) << std::endl;
-    return stream;
-}
-
-// Product
-Product::Product(const Products& ptype,
-        unsigned short price,
-        float attractiveness) {
-            Type = Entities::Product;
-            PType = ptype;
-            Price = price;
-            Attractiveness = attractiveness;
-}
-
-Products Product::getPType() const {
-    return PType;
-}
-
-unsigned short Product::getPrice() const {
-    return Price;
-}
-
-float Product::getAttractiveness() const {
-    return Attractiveness;
-}
-
-// Human
-Human::Human(const std::string& name,
-        const std::pair<unsigned short, unsigned short>& position,
-        const std::pair<unsigned short, unsigned short>& size,
-        std::vector<Product> tobuylist,
-        std::vector<std::pair<unsigned short, unsigned short>> way) :Object(
-            position,
-            size,
-            Objects::Human,
-            'H',
-            tobuylist
-        ) {
-            Name = name;
-            Way = way;
-            TakenProducts = std::vector<Product>();
-}
-
-Human::Human(): Object() {};
-
-const std::vector<Product>* Human::getTakenProducts() const {
-    return &TakenProducts;
-}
-
-void Human::updateTakenProducts(const Product& product) {
-    TakenProducts.push_back(product);
-}
-
-void Human::deleteFromToBuyList(const Product& product) {
-    int ind = 0;
-    bool found = false;
-    for (auto i = Content.begin(); i != Content.end(); i++) {
-        if (*i == product) {
-            found = true;
-            break;
-        }
-        ind++;
+    result += "Way: \n";
+    for (auto i: val.Way) {
+        result += "( " + std::to_string(i.first) + "," + std::to_string(i.second) + " )";
     }
-    if (found) {
-        Content.erase(Content.begin() + ind);
-    }
+    return result;
 }
 
-void Human::deleteFromBuyList(const std::vector<Product>::const_iterator& product) {
-    try {
-        if (Content.cend() > product and Content.cbegin() < product) {
-            Content.erase(product);
-        }
-    } catch(...) {
-        return;
-    }
-}
-
-const std::vector<std::pair<unsigned short, unsigned short>>* Human::getWay() const {
-    return &Way;
-}
-
-std::pair<unsigned short, unsigned short> Human::getPos(const int& ind) const {
-    if (ind < Way.size()) {
-
-        return *(Way.begin() + ind);
-    } else {
-        return std::pair<unsigned short, unsigned short>{0, 0};
-    }
-}
-
-std::string Human::getName() const {
-    return Name;
-}
-
-bool operator==(const Product& prod1, const Product& prod2) {
-    return ((prod1.getPType() == prod2.getPType()) and 
-    (prod1.getPrice() == prod2.getPrice()) and 
-    (prod1.getAttractiveness() == prod2.getAttractiveness()));
-};
-
-bool Human::inToBuyList(const Product& product) const {
-    for (const auto& prod: Content) {
-        if (product.getPType() == prod.getPType()) {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool Human::inTakenProducts(const Product& product) const {
-    for (const auto& prod: TakenProducts) {
-        if (product == prod) {
-            return true;
-        }
-    }
-    return false;
+std::string std::to_string(Product val) {
+    string result = "Name: " + val.Name.toStdString() + "\n" +
+    "Type: " + val.Type.toStdString() + "\n" + 
+    "PType: " + val.PType.toStdString() + "\n" + 
+    "Price: " + to_string(val.Price) + "\n" +
+    "Attractiveness: " + to_string(val.Attractiveness) + "\n";
+    return result;
 }

@@ -35,54 +35,54 @@
       "OType": "Stand",
       "Position": [2, 4],
       "Size": [1, 4],
-      "Content" : [
+      "Content": [
         {
           "Type": "Product",
           "Price": 78,
           "PType": "Milk",
-          "Attractiveness": 0.1
+          "Attractiveness": 14
         },
         {
           "Type": "Product",
           "Price": 94,
           "PType": "Milk",
-          "Attractiveness": 0.8
+          "Attractiveness": 80
         },
         {
           "Type": "Product",
           "Price": 60,
           "PType": "Milk",
-          "Attractiveness": 0.5
+          "Attractiveness": 50
         },
         {
           "Type": "Product",
           "Price": 90,
           "PType": "Milk",
-          "Attractiveness": 1
+          "Attractiveness": 100
         },
         {
           "Type": "Product",
           "Price": 54,
           "PType": "Milk",
-          "Attractiveness": 0.3
+          "Attractiveness": 30
         },
         {
           "Type": "Product",
           "Price": 34,
           "PType": "Eggs",
-          "Attractiveness": 0.9
+          "Attractiveness": 90
         },
         {
           "Type": "Product",
           "Price": 45,
           "PType": "Eggs",
-          "Attractiveness": 0.5
+          "Attractiveness": 50
         },
         {
           "Type": "Product",
           "Price": 59,
           "PType": "Eggs",
-          "Attractiveness": 1
+          "Attractiveness": 100
         }
       ]
     },
@@ -91,27 +91,21 @@
       "OType": "Stand",
       "Position": [5, 4],
       "Size": [1, 4],
-      "Content" : [
-
-      ]
+      "Content": []
     },
     {
       "Type": "Object",
       "OType": "Stand",
       "Position": [7, 4],
       "Size": [1, 4],
-      "Content" : [
-
-      ]
+      "Content": []
     },
     {
       "Type": "Object",
       "OType": "Stand",
       "Position": [5, 2],
       "Size": [3, 1],
-      "Content" : [
-
-      ]
+      "Content": []
     },
     {
       "Type": "Object",
@@ -145,8 +139,8 @@
           "Attractiveness": 0.9
         }
       ],
-      "Way" : [
-        [1, 0], 
+      "Way": [
+        [1, 0],
         [1, 8],
         [6, 8],
         [6, 5],
