@@ -84,7 +84,7 @@ public:
 class Object {
 public:
     // Тип объекта
-    const QString Type{"Object"};
+    QString Type{"Object"};
     // Позиция объекта
     std::pair<ushort, ushort> Position;
     // Размер объекта
@@ -104,7 +104,7 @@ public:
 class Human {
 public:
     // Тип объекта
-    const QString Type{"Human"};
+    QString Type{"Human"};
     // Имя человека
     QString Name;
     // Символ человека

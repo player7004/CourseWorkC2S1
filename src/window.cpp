@@ -12,7 +12,7 @@ Window::Window() {
         connectUI();
     } catch (...) {
         WLog.write("Can`t initialize window", WriteTypes::Error);
-        std::exit(1);
+        this->close();
     }
 }
 
@@ -144,7 +144,7 @@ void Window::setupBase() {
     Mode = ModeStatuses::Manual;
     Item = ToDrawItem::MapLegend;
     Delay = 2;
-    WLog.open("Window");
+    WLog.open("Window.log");
     // MapObject = Map();
 
     WLog.write("Base set up");

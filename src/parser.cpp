@@ -1,7 +1,7 @@
 #include "parser.hpp"
 
 Parser::Parser() {
-    log.open("Parser");
+    log.open("Parser.log");
 }
 
 void Parser::clear() {

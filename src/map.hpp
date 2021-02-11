@@ -1,5 +1,81 @@
 #pragma once
 #include "parser.hpp"
+#include <QString>
+#include <cmath>
+
+// Статусы карты
+enum class MapStatus {
+    // Инициализирована
+    Initialized,
+    // Успешно пропарсила файл
+    Parsed,
+    // Карта была создана
+    Created,
+    // Карта работает
+    Working,
+    // Карта проработала и все люди кончились
+    Done
+};
+
+// Статусы человека
+enum class HumanStatus {
+    // Человек просто был инициализирован
+    New,
+    // Готов идти
+    ReadyToWalk,
+    // Осматривает стенды вокруг
+    Looking,
+    // Берёт из стендов предметы
+    Taking,
+    // Покупает всё из TakenProducts
+    Buying,
+    // закончил
+    Done
+};
+
+class Map {
+private:
+    // Купил человек или нет
+    bool Bought;
+    // Индекс того, что вокруг человека
+    std::vector<Product>::iterator AroundCurrentHumanIndex;
+    // То что вокруг человека
+    std::vector<std::pair<ushort, ushort>>  AroundCurrentHuman;
+    //
+    HumanStatus HStatus;
+
+    // Лог
+    Log MLog;
+    // Все люди
+    std::vector<Human> AllHumans;
+    // Все объекты
+    std::vector<Object> AllObjects;
+    // Базовая карта
+    std::vector<std::vector<QChar>> BaseMap;
+    // Объектная карта
+    std::vector<std::vector<Object*>> ObjectMap;
+    // Очищает карту
+    void clear();
+    // Очищает человека
+    void clearHuman();
+public:
+    MapStatus MStatus;
+    // Текущая карта
+    std::vector<std::vector<QChar>> CurrentMap;
+    // Текущий человек
+    Human* CurrentHuman;
+    // Контент текущего стенда
+    std::vector<Product>* CurrentStandContent;
+    // Конструктор
+    Map();
+    // Открывает файл
+    bool open(const QString& file);
+    // Создаёт базовую карту
+    bool create();
+    // Пересоздаёт карту
+    bool rebuild();
+    // 
+};
 //#include <cmath>
 //
 // enum class MapStatuses {

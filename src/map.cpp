@@ -1,5 +1,95 @@
 #include "map.hpp"
 
+Map::Map() {
+    MLog.open("Map.log");
+    MLog.write("Map Initialized");
+    CurrentHuman = nullptr;
+    CurrentStandContent = nullptr;
+    MStatus = MapStatus::Initialized;
+}
+
+bool Map::open(const QString& file) {
+    clear();
+    MLog.write("Openinig file " + file);
+    Parser parser;
+    if (parser.parse(file)) {
+        AllObjects = parser.AllObjects;
+        AllHumans = parser.AllHumans;
+        MLog.write("File " + file + " parsed");
+        MStatus = MapStatus::Parsed;
+        return true;
+    } else {
+        MLog.write("Can`t parse file " + file, WriteTypes::Info);
+        MLog.write("File " + file + " isn`t opened");
+        return false;
+    }
+}
+
+void Map::clear() {
+    MStatus = MapStatus::Initialized;
+    AllObjects.clear();
+    AllHumans.clear();
+    BaseMap.clear();
+    CurrentMap.clear();
+    CurrentHuman = nullptr;
+    CurrentStandContent = nullptr;
+    MLog.write("Map is cleared");
+}
+
+bool Map::create() {
+    MLog.write("Creating map");
+    std::vector<Object>::iterator pos = AllObjects.begin();
+    if (pos->OType != "EmptySpace") {
+        MLog.write("First object isn`t EmptySpace", WriteTypes::Info);
+        MLog.write("Map creating stopped");
+        return false;
+    }
+    ushort x = pos->Position.first, y = pos->Position.second;
+    ushort X = x + pos->Size.first, Y = y + pos->Size.second;
+    if (x >= X or y >= Y) {
+        MLog.write("Position or size bad", WriteTypes::Info);
+        MLog.write("Map creating stopped");
+        return false;
+    }
+    BaseMap.resize(Y);
+    for (auto& vect: BaseMap) {
+        vect.resize(X);
+    }
+    ObjectMap.resize(Y);
+    for (auto& vect: ObjectMap) {
+        vect.resize(X);
+    }
+    while(pos != AllObjects.end()) {
+        x = pos->Position.first, y = pos->Position.second;
+        X = x + pos->Size.first, Y = y + pos->Size.second;
+        std::cout << std::to_string(*pos) << std::endl;
+        if (x >= X or y >= Y) {
+            MLog.write("Position or size bad", WriteTypes::Info);
+            MLog.write("Map creating stopped");
+            return false;
+        }
+        for (ushort i = y; i < Y; i++) {
+            for (ushort j = x; j < X; j++) {
+                BaseMap[i][j] = pos->Symbol;
+                ObjectMap[i][j] = pos.base();
+            }
+        }
+        pos++;
+    }
+    MLog.write("Map created");
+    CurrentMap = BaseMap;
+    MStatus = MapStatus::Created;
+    return true;
+}
+
+bool Map::rebuild() {
+    try {
+
+    } catch(...) {
+        return false;
+    }
+}
+
 // std::ostream& operator<<(std::ostream& stream, const Map& map) {
 //     stream << "Map: " << map.getFileName() << std::endl;
 //     // Печатаем простую карту
