@@ -82,6 +82,32 @@ bool Map::create() {
     return true;
 }
 
+bool Map::initialize() {
+    if (MStatus == MapStatus::Created or MStatus == MapStatus::Working) {
+
+    } else if (MStatus == MapStatus::Done) {
+
+    } else {
+        return false;
+    }
+}
+
+bool Map::move() {
+
+}
+
+bool Map::look() {
+
+}
+
+bool Map::take() {
+
+}
+
+bool Map::buy() {
+    
+}
+
 bool Map::rebuild() {
     try {
 

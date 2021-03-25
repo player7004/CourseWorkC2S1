@@ -1,9 +1,13 @@
 # Configuration for vscode
+.vs/
+out/
 .vscode/
+CMakeSettings.json
 # Cmake files
 build/
 # Log files
 logs/
+CMakeLists.txt.user
 
 # Prerequisites
 *.d

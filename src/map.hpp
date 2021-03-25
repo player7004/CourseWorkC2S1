@@ -14,7 +14,9 @@ enum class MapStatus {
     // Карта работает
     Working,
     // Карта проработала и все люди кончились
-    Done
+    Done,
+    // Дерьмо случилось
+    Error
 };
 
 // Статусы человека
@@ -30,7 +32,9 @@ enum class HumanStatus {
     // Покупает всё из TakenProducts
     Buying,
     // закончил
-    Done
+    Done,
+    //
+    Undefined
 };
 
 class Map {
@@ -41,8 +45,19 @@ private:
     std::vector<Product>::iterator AroundCurrentHumanIndex;
     // То что вокруг человека
     std::vector<std::pair<ushort, ushort>>  AroundCurrentHuman;
-    //
+    // Статус текущего человека
     HumanStatus HStatus;
+    // Инициалищирует человека
+    bool initialize();
+    // Осуществляет перемещение человека
+    bool move();
+    // Осуществялет просмотр стендов
+    bool look();
+    // Осуществляет выбор предметов из стендов
+    bool take();
+    // Осуществляет покупку предметов
+    bool buy();
+    //
 
     // Лог
     Log MLog;

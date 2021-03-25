@@ -4,7 +4,6 @@ project(CourseWork LANGUAGES CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -12,11 +11,14 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+#set(QT_QMAKE_EXECUTABLE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/CourseWork.exe)
 
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 
+set(Qt5_DIR "C:/Qt/5.12.5/mingw73_64/lib/cmake/Qt5")
+set(CMAKE_PREFIX_PATH "C:/Boost/lib/cmake")
 
 find_package(Threads REQUIRED)
 find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
@@ -39,4 +41,4 @@ add_executable(CourseWork
             src/dist/json/json-forwards.h
 )
 
-target_link_libraries(CourseWork PRIVATE Qt5::Widgets Threads::Threads Boost::filesystem)
+target_link_libraries(CourseWork PRIVATE Qt5::Widgets Qt5::Core Threads::Threads Boost::filesystem)
