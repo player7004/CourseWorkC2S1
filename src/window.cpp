@@ -7,8 +7,8 @@
 Window::Window() {
     WLog.write("Window Initializing");
     try {
-        setupBase();
         setupUI();
+        setupBase();
         connectUI();
     } catch (...) {
         WLog.write("Can`t initialize window", WriteTypes::Error);
@@ -16,29 +16,31 @@ Window::Window() {
     }
 }
 
+void Window::closeEvent(QCloseEvent* event) {
+    running = false;
+    event->accept();
+}
+
 void Window::connectUI() {
     WLog.write("Connecting Buttons");
     // Закрывает окно
     auto QuitFunc = [this]{
-        this->close();
         WLog.write("Closing window");
+        stopThread();
+        this->close();
     };
     connect(QuitButton, &QPushButton::clicked, QuitFunc);
-
-    // Открывает файл
-    // auto LoadFunc = [this] {
-    //     // WLog.write("Loaded new file: " + file);
-    // };
-    // connect(LoadShopButton, &QPushButton::clicked, LoadFunc);
 
     // Меняет режим работы на ручной
     auto SetManualModeFunc = [this] {
         this->Mode = ModeStatuses::Manual;
+        stopThread();
         WLog.write("Mode set to Manual");
     };
     // Меняет режим работы на автоматический
     auto SetAutoModeFunc = [this] {
         this->Mode = ModeStatuses::Auto;
+        startThread();
         WLog.write("Mode set to Auto");
     };
     connect(ManualModeButton, &QRadioButton::clicked, SetManualModeFunc);
@@ -47,6 +49,7 @@ void Window::connectUI() {
     // Меняет объект отображения
     auto SetToDrawItemFunc = [this](int index) {
         this->Item = static_cast<ToDrawItem>(index);
+        drawInfoList();
         // this->drawItem();
         QString str = std::to_string(Item).c_str();
         WLog.write("Item to draw set to " + str);
@@ -64,6 +67,7 @@ void Window::connectUI() {
 
     // Меняет карту
     auto LoadNewFileFunc = [this] {
+        this->stopThread();
         QString str = QFileDialog::getOpenFileName(this, "Choose Shop file", "", "*.json");
         this->clearWindow();
         //this->MapObject = Map(str);
@@ -73,7 +77,16 @@ void Window::connectUI() {
 
     // Делает следующий шаг
     auto NextStepFunc = [this] {
+        if (this->TStatus == ThreadStatuses::Running) {
+            stopThread();
+            this->Mode = ModeStatuses::Manual;
+            this->ManualModeButton->setChecked(true);
+            this->AutoModeButton->setChecked(false);
+            WLog.write("Mode status set to auto by force");
+        }
         // rebuild map
+        drawInfoList();
+        drawGraphics();
         WLog.write("Next step button was clicked");
     };
     connect(NextStepButton, &QPushButton::clicked, NextStepFunc);
@@ -119,8 +132,11 @@ void Window::setupUI() {
     AutoModeButton->setGeometry(5, 365, 200, 30);
     AutoModeButton->setText(QString("Автоматический режим"));
     // Окно просматра графики
-    GraphicView = new QGraphicsView(this);
+    GraphicView = new QListWidget(this);
     GraphicView->setGeometry(5, 5, 325, 325);
+    QFont gfont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    gfont.setPointSize(20);
+    GraphicView->setFont(gfont);
     // Окно изменения задержки
     DelaySpin = new QSpinBox(this);
     DelaySpin->setGeometry(280, 365, 50, 30);
@@ -132,7 +148,7 @@ void Window::setupUI() {
     DelayLabel->setText(QString("Задержка(с): "));
     DelayLabel->setGeometry(200, 330, 120, 30);
     QFont font;
-    font.setPointSize(14);
+    font.setPointSize(12);
     DelayLabel->setFont(font);
     
     this->show();
@@ -141,19 +157,79 @@ void Window::setupUI() {
 }
 
 void Window::setupBase() {
+    WLog.open("Window.log");
     Mode = ModeStatuses::Manual;
     Item = ToDrawItem::MapLegend;
     Delay = 2;
-    WLog.open("Window.log");
     // MapObject = Map();
-
+    running = true;
+    Worker = new std::thread(ThreadFunc, this);
+    Worker->detach();
+    TStatus = ThreadStatuses::Sleeping;
     WLog.write("Base set up");
 }
 
 void Window::clearWindow() {
-    InfoList->clear();
-    // reset graphic
+    stopThread();
+    resetGraphic();
     WLog.write("Window cleared");
+}
+
+void Window::resetGraphic() {
+    GraphicView->clear();
+    InfoList->clear();
+    WLog.write("Graphics window cleared");
+}
+
+void Window::drawGraphics() {
+    resetGraphic();
+    Map test;
+    test.open("Shop.json");
+    test.create();
+    for (const auto& i : test.OutMap) {
+        GraphicView->addItem(i);
+    }
+    WLog.write("Graphics drown");
+}
+
+void Window::drawInfoList() const {
+    InfoList->clear();
+    if (Item == ToDrawItem::MapLegend) {
+        // std::vector<QString> obj = Map.getMapLegend()
+        Map test;
+        test.open("Shop.json");
+        test.create();
+        for (const auto& i : test.generateMapLegend()) {
+            InfoList->addItem(i);
+        }
+    }
+    else if (Item == ToDrawItem::StandContent) {
+        // std::vector<QString> obj = Map.getCurrentStandContent()
+        Map test;
+        test.open("Shop.json");
+        test.create();
+        for (const auto& i : test.generateStandContent()) {
+            InfoList->addItem(i);
+        }
+    }
+    else if (Item == ToDrawItem::TakenProducts) {
+        // std::vector<QString> obj = Map.CurrentHuman.TakenProducts
+        Map test;
+        test.open("Shop.json");
+        test.create();
+        for (const auto& i : test.generateTakenProducts()) {
+            InfoList->addItem(i);
+        }
+    }
+    else if (Item == ToDrawItem::ToBuyList) {
+        // std::vector<QString> obj = Map.CurrentHuman.ToBuyList
+        Map test;
+        test.open("Shop.json");
+        test.create();
+        for (const auto& i : test.generateToBuyList()) {
+            InfoList->addItem(i);
+        }
+    }
 }
 
 std::string std::to_string(ToDrawItem val) {
@@ -180,290 +256,44 @@ std::string std::to_string(ModeStatuses val) {
     case ModeStatuses::Manual:
         return "Manual";
     default:
-        break;
+        return "";
     }
 }
 
-// void Ui_MainWindow::setupUi(QMainWindow *MainWindow)
-// {
-//     if (MainWindow->objectName().isEmpty())
-//         MainWindow->setObjectName(QString::fromUtf8("MainWindow"));
-//     MainWindow->resize(800, 600);
-//     MainWindow->setMinimumSize(QSize(800, 600));
-//     MainWindow->setMaximumSize(QSize(800, 600));
-//     MAIN = new QWidget(MainWindow);
-//     MAIN->setObjectName(QString::fromUtf8("MAIN"));
-//     ShopMap = new QListWidget(MAIN);
-//     ShopMap->setObjectName(QString::fromUtf8("ShopMap"));
-//     ShopMap->setGeometry(QRect(10, 10, 321, 321));
-//     QFont font;
-//     font.setFamily(QString::fromUtf8("DejaVu Sans Mono"));
-//     font.setBold(true);
-//     font.setWeight(75);
-//     ShopMap->setFont(font);
-//     StandContenLabel = new QLabel(MAIN);
-//     StandContenLabel->setObjectName(QString::fromUtf8("StandContenLabel"));
-//     StandContenLabel->setGeometry(QRect(10, 340, 321, 20));
-//     QFont font1;
-//     font1.setPointSize(14);
-//     StandContenLabel->setFont(font1);
-//     StandContentList = new QListWidget(MAIN);
-//     StandContentList->setObjectName(QString::fromUtf8("StandContentList"));
-//     StandContentList->setGeometry(QRect(10, 370, 321, 221));
-//     StandContentList->setFont(font);
-//     HumanNameLabel = new QLabel(MAIN);
-//     HumanNameLabel->setObjectName(QString::fromUtf8("HumanNameLabel"));
-//     HumanNameLabel->setGeometry(QRect(340, 10, 121, 21));
-//     QFont font2;
-//     font2.setPointSize(12);
-//     HumanNameLabel->setFont(font2);
-//     ToBuyList = new QListWidget(MAIN);
-//     ToBuyList->setObjectName(QString::fromUtf8("ToBuyList"));
-//     ToBuyList->setGeometry(QRect(340, 70, 221, 261));
-//     ToBuyList->setFont(font);
-//     TakenProductsList = new QListWidget(MAIN);
-//     TakenProductsList->setObjectName(QString::fromUtf8("TakenProductsList"));
-//     TakenProductsList->setGeometry(QRect(570, 70, 221, 261));
-//     TakenProductsList->setFont(font);
-//     CashBoxLabel = new QLabel(MAIN);
-//     CashBoxLabel->setObjectName(QString::fromUtf8("CashBoxLabel"));
-//     CashBoxLabel->setGeometry(QRect(470, 10, 151, 21));
-//     CashBoxLabel->setFont(font2);
-//     MoneyLabel = new QLabel(MAIN);
-//     MoneyLabel->setObjectName(QString::fromUtf8("MoneyLabel"));
-//     MoneyLabel->setGeometry(QRect(630, 10, 161, 21));
-//     MoneyLabel->setFont(font1);
-//     ToBuyLabel = new QLabel(MAIN);
-//     ToBuyLabel->setObjectName(QString::fromUtf8("ToBuyLabel"));
-//     ToBuyLabel->setGeometry(QRect(340, 40, 221, 21));
-//     ToBuyLabel->setFont(font1);
-//     TakenProductsLabbel = new QLabel(MAIN);
-//     TakenProductsLabbel->setObjectName(QString::fromUtf8("TakenProductsLabbel"));
-//     TakenProductsLabbel->setGeometry(QRect(570, 40, 221, 21));
-//     TakenProductsLabbel->setFont(font1);
-//     MapLegendLabel = new QLabel(MAIN);
-//     MapLegendLabel->setObjectName(QString::fromUtf8("MapLegendLabel"));
-//     MapLegendLabel->setGeometry(QRect(340, 340, 221, 20));
-//     MapLegendLabel->setFont(font1);
-//     MapLegendList = new QListWidget(MAIN);
-//     MapLegendList->setObjectName(QString::fromUtf8("MapLegendList"));
-//     MapLegendList->setGeometry(QRect(340, 370, 221, 221));
-//     MapLegendList->setFont(font);
-//     NicknameLabel = new QLabel(MAIN);
-//     NicknameLabel->setObjectName(QString::fromUtf8("NicknameLabel"));
-//     NicknameLabel->setGeometry(QRect(718, 530, 80, 20));
-//     GitHubLabel = new QLabel(MAIN);
-//     GitHubLabel->setObjectName(QString::fromUtf8("GitHubLabel"));
-//     GitHubLabel->setGeometry(QRect(603, 570, 221, 20));
-//     VKLabel = new QLabel(MAIN);
-//     VKLabel->setObjectName(QString::fromUtf8("VKLabel"));
-//     VKLabel->setGeometry(QRect(628, 550, 191, 20));
-//     OthersLabel = new QLabel(MAIN);
-//     OthersLabel->setObjectName(QString::fromUtf8("OthersLabel"));
-//     OthersLabel->setGeometry(QRect(570, 340, 221, 20));
-//     OthersLabel->setFont(font1);
-//     PauseButton = new QPushButton(MAIN);
-//     PauseButton->setObjectName(QString::fromUtf8("PauseButton"));
-//     PauseButton->setGeometry(QRect(570, 370, 111, 28));
-//     ContinueButton = new QPushButton(MAIN);
-//     ContinueButton->setObjectName(QString::fromUtf8("ContinueButton"));
-//     ContinueButton->setGeometry(QRect(682, 370, 111, 28));
-//     LoadShopButton = new QPushButton(MAIN);
-//     LoadShopButton->setObjectName(QString::fromUtf8("LoadShopButton"));
-//     LoadShopButton->setGeometry(QRect(570, 422, 223, 28));
-//     QuitButton = new QPushButton(MAIN);
-//     QuitButton->setObjectName(QString::fromUtf8("QuitButton"));
-//     QuitButton->setGeometry(570, 452, 223, 28);
-//     LogStatus = new QRadioButton(MAIN);
-//     LogStatus->setObjectName(QString::fromUtf8("LogStatusRadioButton"));
-//     LogStatus->setGeometry(570, 400, 200, 20);
-//     MainWindow->setCentralWidget(MAIN);
+void Window::ThreadFunc(Window* object) {
+    object->WLog.write("Thread started");
+    object->currentDelay = 0;
+    while (object->running) {
+        if (object->TStatus == ThreadStatuses::Running) {
+            if (object->currentDelay > object->Delay) {
+                object->drawGraphics();
+                object->drawInfoList();
+                object->currentDelay = 0;
+            } else {
+                object->currentDelay += 1;
+            }
+            // rebuildMap
+        }
+        if (object->TStatus == ThreadStatuses::Stopping) {
+            object->TStatus = ThreadStatuses::Sleeping;
+            object->currentDelay = 0;
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+    object->TStatus = ThreadStatuses::Sleeping; 
+}
 
-//     retranslateUi(MainWindow);
+void Window::stopThread() {
+    WLog.write("Stopping thread");
+    this->TStatus = ThreadStatuses::Stopping;
+    // В теории в данном случае необязательно ждать завершения поток
+    while (this->TStatus != ThreadStatuses::Sleeping);
+    WLog.write("Thread stopped");
+}
 
-//     QMetaObject::connectSlotsByName(MainWindow);
-// }
-
-// void Ui_MainWindow::retranslateUi(QMainWindow *MainWindow)
-// {
-//     MainWindow->setWindowTitle(QCoreApplication::translate("MainWindow", "MainWindow", nullptr));
-//     StandContenLabel->setText(QCoreApplication::translate("MainWindow", "Stand content:", nullptr));
-//     HumanNameLabel->setText(QCoreApplication::translate("MainWindow", "HumanName", nullptr));
-//     CashBoxLabel->setText(QCoreApplication::translate("MainWindow", "CashBox Money: ", nullptr));
-//     MoneyLabel->setText(QCoreApplication::translate("MainWindow", "Money", nullptr));
-//     ToBuyLabel->setText(QCoreApplication::translate("MainWindow", "To Buy:", nullptr));
-//     TakenProductsLabbel->setText(QCoreApplication::translate("MainWindow", "Taken Products: ", nullptr));
-//     MapLegendLabel->setText(QCoreApplication::translate("MainWindow", "ShopMap Legend:", nullptr));
-//     NicknameLabel->setText(QCoreApplication::translate("MainWindow", "player7004", nullptr));
-//     GitHubLabel->setText(QCoreApplication::translate("MainWindow", "https://github.com/player7004", nullptr));
-//     VKLabel->setText(QCoreApplication::translate("MainWindow", "https://vk.com/player7004", nullptr));
-//     OthersLabel->setText(QCoreApplication::translate("MainWindow", "Others:", nullptr));
-//     PauseButton->setText(QCoreApplication::translate("MainWindow", "Pause", nullptr));
-//     ContinueButton->setText(QCoreApplication::translate("MainWindow", "Continue", nullptr));
-//     LoadShopButton->setText(QCoreApplication::translate("MainWindow", "Load Shop", nullptr));
-//     QuitButton->setText(QCoreApplication::translate("MainWindow", "Quit", nullptr));
-//     LogStatus->setText(QCoreApplication::translate("MainWindow", "Save result in file", nullptr));
-// }
-
-// namespace Ui
-// {
-//     Window::Window()
-//     {
-//         setupUi(this);
-//         this->show();
-//         running = false;
-//         TheHuman = nullptr;
-//         connect(LoadShopButton, &QPushButton::clicked, [this]{
-//             resetWindow();
-//             std::string str = QFileDialog::getOpenFileName(this, "Choose Shop file", "", "*.json").toStdString();
-//             map = Map(str);
-//             MapStatus = MapStatuses::NotInitialized;
-//             std::thread some([this]{
-//                 this->running = true;
-//                 this->ThreadStatus = ThreadStatuses::Running;
-//                 while (this->ThreadStatus == ThreadStatuses::Running) {
-//                     if (this->running) {
-//                         this->TheHuman = this->map.getCurrentHuman();
-//                         this->MapStatus = this->map.rebuildMap(this->MapStatus);
-//                         this->printShop();
-//                         this->printToBuyList();
-//                         this->printTakenProducts();
-//                         this->printHumanName();
-//                         if (this->MapStatus == MapStatuses::Error) {
-//                             this->ThreadStatus = ThreadStatuses::Stopping;
-//                         } else if (this->MapStatus == MapStatuses::Done) {
-//                             this->ThreadStatus = ThreadStatuses::Stopping;
-//                         }
-//                     }
-//                     std::this_thread::sleep_for(std::chrono::seconds(2));
-//                 }
-//                 this->ThreadStatus = ThreadStatuses::Sleeping;
-//             });
-//             some.detach();
-//         });
-//         connect(PauseButton, &QPushButton::clicked, [this]() {
-//             this->running = false;
-//         });
-//         connect(ContinueButton, &QPushButton::clicked, [this]() {
-//             this->running = true;
-//         });
-//         connect(QuitButton, &QPushButton::clicked, [this]() {
-//             this->running = false;
-//             this->resetWindow();
-//             this->close();
-//         });
-//     }
-
-//     void Window::printShop() {
-//         clearAll();
-//         const std::vector<std::vector<char>>* const thing = map.getCurrentMap();
-//         for (std::vector<std::vector<char>>::const_iterator i = thing->begin(); i != thing->end(); i++) {
-//             std::string result;
-//             for (std::vector<char>::const_iterator j = i->begin(); j != i->end(); j++) {
-//                 result += *j;
-//             }
-//             ShopMap->addItem(QString(result.c_str()));
-//         }
-//     }
-
-//     void Window::resetWindow() {
-//         map = Map();
-//         running = false;
-//         MapStatus = MapStatuses::NotInitialized;
-//         if (ThreadStatus == ThreadStatuses::Running) {
-//             ThreadStatus = ThreadStatuses::Stopping;
-//             while (ThreadStatus != ThreadStatuses::Sleeping);
-//         }
-//         clearAll();
-//     }
-
-//     void Window::loadErrorWindow(const std::string &text, const std::string &hint)
-//     {
-//         // Инициализация самого окна
-//         auto *obj = new QWidget(nullptr);
-//         obj->setAttribute(Qt::WA_DeleteOnClose);
-//         obj->setAttribute(Qt::WA_ShowModal);
-//         obj->resize(400, 150);
-//         obj->setMinimumSize(400, 150);
-//         obj->setMaximumSize(400, 150);
-//         // Инициализация кнопки
-//         auto *butt = new QPushButton(obj);
-//         butt->setGeometry(10, 115, 380, 30);
-//         butt->setText(QString("Quit"));
-//         connect(butt, &QPushButton::clicked, [obj]() {
-//             obj->close();
-//         });
-//         // Инициализация шрифта
-//         QFont font;
-//         font.setPointSize(14);
-//         // Иницаиализация надписей
-//         // Надпись Что=то случилось
-//         auto *constLabel = new QLabel(obj);
-//         constLabel->setGeometry(10, 5, 380, 25);
-//         constLabel->setFont(font);
-//         constLabel->setText("<b>Something unexpected happened: </b>");
-//         // Текст ошибки
-//         auto *errorTextLabel = new QLabel(obj);
-//         QPalette errorColors;
-//         errorColors.setColor(QPalette::Window, Qt::white);
-//         errorColors.setColor(QPalette::WindowText, Qt::red);
-//         errorTextLabel->setGeometry(30, 35, 350, 25);
-//         errorTextLabel->setFont(font);
-//         errorTextLabel->setPalette(errorColors);
-//         errorTextLabel->setText(QString(text.c_str()));
-//         // Совет по исправлению
-//         auto *hintLabel = new QLabel(obj);
-//         QPalette hintColors;
-//         hintColors.setColor(QPalette::Window, Qt::white);
-//         hintColors.setColor(QPalette::WindowText, Qt::green);
-//         hintLabel->setPalette(hintColors);
-//         hintLabel->setGeometry(30, 65, 350, 25);
-//         hintLabel->setFont(font);
-//         hintLabel->setText(QString(hint.c_str()));
-//         // Показ окна
-//         obj->show();
-//     }
-
-//     void Window::printToBuyList() {
-//         if (TheHuman == nullptr) {
-//             return;
-//         }
-//         auto list = TheHuman->getContent();
-//         ToBuyList->clear();
-//         for (auto i = list->begin(); i != list ->end(); i++) {
-//             std::string data = std::to_string(i->getPType()) + " Price: " + std::to_string(i->getPrice()) + " Attractiveness: " + std::to_string(int(i->getAttractiveness()*100));
-//             ToBuyList->addItem(QString(data.c_str()));
-//         }
-//     }
-
-//     void Window::printTakenProducts() {
-//         if (TheHuman == nullptr) {
-//             return;
-//         }
-//         auto list = TheHuman->getTakenProducts();
-//         TakenProductsList->clear();
-//         for (auto i = list->begin(); i != list->end(); i++) {
-//             std::string data = std::to_string(i->getPType()) + " Price: " + std::to_string(i->getPrice()) + " Attractiveness: " + std::to_string(int(i->getAttractiveness()*100));
-//             TakenProductsList->addItem(QString(data.c_str()));
-//         }
-//     }
-
-//     void Window::printHumanName() {
-//         if (TheHuman == nullptr) {
-//             HumanNameLabel->setText(QCoreApplication::translate("MainWindow", "HumanName", nullptr));
-//             std::cout << TheHuman << std::endl;
-//         } else {
-//             HumanNameLabel->setText(QCoreApplication::translate("MainWindow", TheHuman->getName().c_str(), nullptr));
-//             std::cout << TheHuman->getName() << std::endl;
-//         }
-//         HumanNameLabel->update();
-//     };
-
-//     void Window::clearAll() {
-//         ShopMap->clear();
-//         ToBuyList->clear();
-//         TakenProductsList->clear();
-//         TheHuman = nullptr;
-//     }
-
-// } // namespace Ui
+void Window::startThread() {
+    TStatus = ThreadStatuses::Running;
+    //while (TStatus != ThreadStatuses::Sleeping);
+    //Worker.detach();
+    WLog.write("Thread started");
+}

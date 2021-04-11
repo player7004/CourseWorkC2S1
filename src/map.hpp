@@ -3,94 +3,199 @@
 #include <QString>
 #include <cmath>
 
-// Статусы карты
 enum class MapStatus {
-    // Инициализирована
+    // Карта была инициализирована
     Initialized,
-    // Успешно пропарсила файл
-    Parsed,
+    // Файл для карты был прочитан
+    Opened,
     // Карта была создана
     Created,
-    // Карта работает
+    // Карта в процессе работы
     Working,
-    // Карта проработала и все люди кончились
-    Done,
-    // Дерьмо случилось
+    // Ошибка выполнения
     Error
 };
 
-// Статусы человека
 enum class HumanStatus {
-    // Человек просто был инициализирован
-    New,
-    // Готов идти
-    ReadyToWalk,
-    // Осматривает стенды вокруг
+    // Не инициализирован
+    None,
+    // Инициализирован
+    Initialized,
+    // Походил
+    Walked,
+    // Осматривает стенды
     Looking,
-    // Берёт из стендов предметы
+    // Берёт продукты
     Taking,
-    // Покупает всё из TakenProducts
-    Buying,
-    // закончил
+    // Покупает продукты
+    Bying,
+    // Закончил
     Done,
-    //
-    Undefined
+    // Люди кончились
+    End,
+    // Ошибка
+    // Человек не купил всё или не всё взял
+    Error
 };
 
+// Карта
 class Map {
 private:
-    // Купил человек или нет
-    bool Bought;
-    // Индекс того, что вокруг человека
-    std::vector<Product>::iterator AroundCurrentHumanIndex;
-    // То что вокруг человека
-    std::vector<std::pair<ushort, ushort>>  AroundCurrentHuman;
-    // Статус текущего человека
-    HumanStatus HStatus;
-    // Инициалищирует человека
-    bool initialize();
-    // Осуществляет перемещение человека
-    bool move();
-    // Осуществялет просмотр стендов
-    bool look();
-    // Осуществляет выбор предметов из стендов
-    bool take();
-    // Осуществляет покупку предметов
-    bool buy();
-    //
-
-    // Лог
-    Log MLog;
-    // Все люди
-    std::vector<Human> AllHumans;
-    // Все объекты
+    // Здесь лежат все имеющиеся объекты
     std::vector<Object> AllObjects;
+    // Здесь лежат все имеющиеся люди
+    std::vector<Human> AllHumans;
+
+    // То что связано с картой в смысле её графического представления
     // Базовая карта
     std::vector<std::vector<QChar>> BaseMap;
     // Объектная карта
     std::vector<std::vector<Object*>> ObjectMap;
-    // Очищает карту
-    void clear();
-    // Очищает человека
-    void clearHuman();
-public:
-    MapStatus MStatus;
-    // Текущая карта
-    std::vector<std::vector<QChar>> CurrentMap;
-    // Текущий человек
+    // Обновляет карту на выход
+    void updateOutMap();
+
+    // Все что связано с человеком и его объектами
+    // Итератор указывающий на местоположение текущиего человека
+    std::vector<Human>::iterator CurrentHumanIter;
+    // Указатель на текущего человека
     Human* CurrentHuman;
-    // Контент текущего стенда
-    std::vector<Product>* CurrentStandContent;
+    // Указатель на местоположение текущего человека
+    std::vector<std::pair<ushort, ushort>>::iterator CurrentHumanWayIter;
+    // То, что находится вокруг человека
+    std::vector<Object> AroundCurrentHuman;
+    // Итератор по AroundCurrentHuman
+    std::vector<Object>::iterator AroundCurrentHumanIter;
+    // Статус текущего человека
+    HumanStatus HStatus;
+
+    // Свойства и атрибуты карты
+    // Статус карты
+    MapStatus Status;
+    // Собственный лог карты
+    Log MLog;
+public:
+    // Карта на выход
+    std::vector<QString> OutMap;
+
+    // Базовые функции
     // Конструктор
     Map();
-    // Открывает файл
+    // Деструктор
+    ~Map();
+
+    // Функции контроля карты
+    // Отрывает файл
     bool open(const QString& file);
-    // Создаёт базовую карту
+    // Создаёт из файла карту
     bool create();
-    // Пересоздаёт карту
-    bool rebuild();
-    // 
+    // Очищает карту
+    void clear();
+    // Создаёт легенду карты
+    std::vector<QString> generateMapLegend();
+    // Создаёт содежимое текущего стенды
+    std::vector<QString> generateStandContent();
+    // Создаёт содержимое текущего списка покупок
+    std::vector<QString> generateToBuyList();
+    // Создает список взятых продуктов
+    std::vector<QString> generateTakenProducts();
+    // Перестраивает карту
+    void rebuild();
 };
+
+//// Статусы карты
+//enum class MapStatus {
+//    // Инициализирована
+//    Initialized,
+//    // Успешно пропарсила файл
+//    Parsed,
+//    // Карта была создана
+//    Created,
+//    // Карта работает
+//    Working,
+//    // Карта проработала и все люди кончились
+//    Done,
+//    // Дерьмо случилось
+//    Error
+//};
+//
+//// Статусы человека
+//enum class HumanStatus {
+//    // Человек просто был инициализирован
+//    New,
+//    // Человек походил
+//    Walked,
+//    // Осматривает стенды вокруг
+//    Looking,
+//    // Берёт из стендов предметы
+//    Taking,
+//    // Покупает всё из TakenProducts
+//    Buying,
+//    // закончил
+//    Done,
+//    // Потерялся, случилась ошибка
+//    Undefined
+//};
+//
+//class Map {
+//private:
+//    // Купил человек или нет
+//    bool Bought;
+//    // Индекс того, что вокруг человека
+//    std::vector<Object>::iterator AroundCurrentHumanIndex;
+//    // То что вокруг человека
+//    std::vector<Object>*  AroundCurrentHuman;
+//    // Статус текущего человека
+//    HumanStatus HStatus;
+//    // Путь текущего человека
+//    std::vector<std::pair<ushort, ushort>>* CurrentHumanWay;
+//    // Индекс пути человека
+//    std::vector<std::pair<ushort, ushort>>::iterator CurrentHumanWayIndex;
+//    // Указатель на текущего человека
+//    std::vector<Human>::iterator CurrentHumanIndex;
+//    // Инициалищирует человека
+//    bool initialize();
+//    // Осуществляет перемещение человека
+//    bool move();
+//    // Осуществялет просмотр стендов
+//    bool look();
+//    // Осуществляет выбор предметов из стендов
+//    bool take();
+//    // Осуществляет покупку предметов
+//    bool buy();
+//    // Очищает человека
+//    void clearHuman();
+//
+//    // Лог
+//    Log MLog;
+//    // Все люди
+//    std::vector<Human> AllHumans;
+//    // Все объекты
+//    std::vector<Object> AllObjects;
+//    // Базовая карта
+//    std::vector<std::vector<QChar>> BaseMap;
+//    // Объектная карта
+//    std::vector<std::vector<Object*>> ObjectMap;
+//    // Очищает карту
+//    void clear();
+//public:
+//    MapStatus MStatus;
+//    // Текущая карта
+//    std::vector<std::vector<QChar>> CurrentMap;
+//    // Текущий человек
+//    Human* CurrentHuman;
+//    // Контент текущего стенда
+//    std::vector<Product>* CurrentStandContent;
+//    // Список покупок текущего человека
+//    std::vector<Product>* CurrentHumanToBuyList;
+//    // Конструктор
+//    Map();
+//    // Открывает файл
+//    bool open(const QString& file);
+//    // Создаёт базовую карту
+//    bool create();
+//    // Пересоздаёт карту
+//    bool rebuild();
+//};
 //#include <cmath>
 //
 // enum class MapStatuses {

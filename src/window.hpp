@@ -12,6 +12,7 @@
 
 #include <thread>
 #include <chrono>
+#include <atomic>
 #include "map.hpp"
 
 enum class ModeStatuses {
@@ -71,13 +72,15 @@ public:
     // Кнопка сохранения в файл
     QRadioButton* AutoModeButton;
     // Окно с графикой
-    QGraphicsView* GraphicView;
+    QListWidget* GraphicView;
     // Указывает задержку автоматического режима
     QSpinBox* DelaySpin;
     // Надпись
     QLabel* DelayLabel;
     // Конструктор
     Window();
+    // Закрытие окна
+    void closeEvent(QCloseEvent* event) override;
 
     // Устанавливает базовые значения
     // Mode
@@ -91,88 +94,32 @@ public:
     ModeStatuses Mode;
     // Отображаемый объект
     ToDrawItem Item;
+    // Очищает окно графики
+    void resetGraphic();
+    // Отрисовывает графику
+    void drawGraphics();
+    // Отображает лист информации
+    void drawInfoList() const;
     // Лог окна
     Log WLog;
     // Задержка автоматического режима
-    unsigned short Delay;
+    std::atomic<unsigned short> Delay;
     // Карта
     // Map WMap;
+    // Поток для автоматического режима
+    std::thread* Worker = nullptr;
+    // Статус потока
+    std::atomic<ThreadStatuses> TStatus;
+    // Функция для потока
+    static void ThreadFunc(Window* object);
+    // Останавливает поток
+    void stopThread();
+    // Запускает поток
+    void startThread();
+    // Индикатор работы потока
+    std::atomic<bool> running;
+    //
+    std::atomic<ushort> currentDelay;
 };
-
-// class Ui_MainWindow : public QMainWindow
-// {
-// public:
-//     QWidget *MAIN;
-//     QListWidget *ShopMap;
-//     QLabel *StandContenLabel;
-//     QListWidget *StandContentList;
-//     QLabel *HumanNameLabel;
-//     QListWidget *ToBuyList;
-//     QListWidget *TakenProductsList;
-//     QLabel *CashBoxLabel;
-//     QLabel *MoneyLabel;
-//     QLabel *ToBuyLabel;
-//     QLabel *TakenProductsLabbel;
-//     QLabel *MapLegendLabel;
-//     QListWidget *MapLegendList;
-//     QLabel *NicknameLabel;
-//     QLabel *GitHubLabel;
-//     QLabel *VKLabel;
-//     QLabel *OthersLabel;
-//     QPushButton *PauseButton;
-//     QPushButton *ContinueButton;
-//     QPushButton *LoadShopButton;
-//     QPushButton *QuitButton;
-//     QRadioButton *LogStatus;
-//     // Инициализирует все объекты
-//     void setupUi(QMainWindow *MainWindow);
-//     // Выставляет всем объектам базовые значеня
-//     void retranslateUi(QMainWindow *MainWindow);
-// };
-
-// enum class ThreadStatuses {
-//     // Спит
-//     Sleeping,
-//     // Работает
-//     Running,
-//     // Подан сигнал на остановка
-//     Stopping
-// };
-
-// namespace Ui
-// {
-//     class Window : public Ui_MainWindow
-//     {
-//     private:
-//         // Очищает ShopMap
-//         // Очищает ToBuyList
-//         // Очищает TakenProducts
-//         void clearAll();
-//         // Используется для полной остановки магазина
-//         // Например при смене файла
-//         void resetWindow();
-//         MapStatuses MapStatus;
-//         ThreadStatuses ThreadStatus;
-//         // Карта
-//         Map map = Map();
-//         // Показывает Можно ли дальше ходить или нет
-//         bool running;
-//         // Выводит магазин в Его карту
-//         void printShop();
-//         // Указатель на текущего человека
-//         const Human* TheHuman;
-//         // Печатает список покупок человека
-//         void printToBuyList();
-//         // Печатает список взятых продуктов
-//         void printTakenProducts();
-//         // Меняет имя на Имя текущего человека
-//         void printHumanName();
-//     public:
-//         // Выводит окно ошибки
-//         static void loadErrorWindow(const std::string &text, const std::string &hint);
-//         // Конструктор
-//         Window();
-//     };
-// } // namespace Ui
 
 QT_END_NAMESPACE

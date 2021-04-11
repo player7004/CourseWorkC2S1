@@ -1,9 +1,13 @@
-# Configuration for vscode
-.vs/
+# Configurations for IDEs
+vs/
 out/
 .vscode/
+.idea/
+
 CMakeSettings.json
-# Cmake files
+# Cmake build files
+cmake-build-debug/
+cmake-build-release/
 build/
 # Log files
 logs/

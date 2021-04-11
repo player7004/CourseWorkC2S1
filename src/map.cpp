@@ -1,43 +1,41 @@
 #include "map.hpp"
 
 Map::Map() {
-    MLog.open("Map.log");
-    MLog.write("Map Initialized");
+	MLog.open("Map.Log");
+	MLog.write("Map Initialized");
+	Status = MapStatus::Initialized;
+    CurrentHumanIter = {};
     CurrentHuman = nullptr;
-    CurrentStandContent = nullptr;
-    MStatus = MapStatus::Initialized;
+    AroundCurrentHuman = {};
+    AroundCurrentHumanIter = {};
+    CurrentHumanWayIter = {};
+    HStatus = HumanStatus::None;
+}
+
+Map::~Map() {
+	MLog.write("Map Closed");
 }
 
 bool Map::open(const QString& file) {
-    clear();
-    MLog.write("Openinig file " + file);
-    Parser parser;
-    if (parser.parse(file)) {
-        AllObjects = parser.AllObjects;
-        AllHumans = parser.AllHumans;
-        MLog.write("File " + file + " parsed");
-        MStatus = MapStatus::Parsed;
-        return true;
-    } else {
-        MLog.write("Can`t parse file " + file, WriteTypes::Info);
-        MLog.write("File " + file + " isn`t opened");
-        return false;
-    }
-}
-
-void Map::clear() {
-    MStatus = MapStatus::Initialized;
-    AllObjects.clear();
-    AllHumans.clear();
-    BaseMap.clear();
-    CurrentMap.clear();
-    CurrentHuman = nullptr;
-    CurrentStandContent = nullptr;
-    MLog.write("Map is cleared");
+	clear();
+	MLog.write("Opening file " + file);
+	Parser obj;
+	if (obj.parse(file)) {
+		AllObjects = obj.AllObjects;
+		AllHumans = obj.AllHumans;
+		MLog.write("File " + file + " sucessfuly parsed");
+		Status = MapStatus::Opened;
+		return true;
+	}
+	else {
+		MLog.write("File " + file + " can`t be parsed", WriteTypes::Info);
+		Status = MapStatus::Error;
+		return false;
+	}
 }
 
 bool Map::create() {
-    MLog.write("Creating map");
+	MLog.write("Starting to create Map");
     std::vector<Object>::iterator pos = AllObjects.begin();
     if (pos->OType != "EmptySpace") {
         MLog.write("First object isn`t EmptySpace", WriteTypes::Info);
@@ -62,7 +60,6 @@ bool Map::create() {
     while(pos != AllObjects.end()) {
         x = pos->Position.first, y = pos->Position.second;
         X = x + pos->Size.first, Y = y + pos->Size.second;
-        std::cout << std::to_string(*pos) << std::endl;
         if (x >= X or y >= Y) {
             MLog.write("Position or size bad", WriteTypes::Info);
             MLog.write("Map creating stopped");
@@ -70,51 +67,314 @@ bool Map::create() {
         }
         for (ushort i = y; i < Y; i++) {
             for (ushort j = x; j < X; j++) {
-                BaseMap[i][j] = pos->Symbol;
-                ObjectMap[i][j] = pos.base();
+                BaseMap[j][i] = pos->Symbol;
+                ObjectMap[j][i] = pos.base();
             }
         }
         pos++;
     }
+    Status = MapStatus::Created;
     MLog.write("Map created");
-    CurrentMap = BaseMap;
-    MStatus = MapStatus::Created;
+    updateOutMap();
     return true;
 }
 
-bool Map::initialize() {
-    if (MStatus == MapStatus::Created or MStatus == MapStatus::Working) {
+void Map::clear() {
+	MLog.write("The map was cleared");
+	Status = MapStatus::Initialized;
+	AllObjects.clear();
+	AllHumans.clear();
+}
 
-    } else if (MStatus == MapStatus::Done) {
+void Map::rebuild() {
 
-    } else {
-        return false;
+}
+
+
+void Map::updateOutMap() {
+	std::vector<QString> result;
+	for (const auto& i : BaseMap) {
+		QString str;
+		for (const auto& j : i) {
+			str += j;
+		}
+		result.push_back(str);
+	}
+	OutMap = result;
+	MLog.write("Out Map Updated");
+}
+
+std::vector<QString> Map::generateMapLegend() {
+    MLog.write("Creating Map Legend");
+    std::map<QChar, QString> Dict;
+    // Вносим Объекты
+    for (const auto& i : AllObjects) {
+        if (Dict.find(i.Symbol) == Dict.end()) {
+            Dict.insert({ i.Symbol, i.OType });
+        }
     }
-}
-
-bool Map::move() {
-
-}
-
-bool Map::look() {
-
-}
-
-bool Map::take() {
-
-}
-
-bool Map::buy() {
-    
-}
-
-bool Map::rebuild() {
-    try {
-
-    } catch(...) {
-        return false;
+    MLog.write("Objects Legend created");
+    // Вносим людей
+    for (const auto& i : AllHumans) {
+        if (Dict.find(i.Symbol) == Dict.end()) {
+            Dict.insert({ i.Symbol, i.Type });
+        }
     }
+    MLog.write("Humans Legend Created");
+    // Результат
+    std::vector<QString> result;
+    // Переносим результат
+    for (const auto& i : Dict) {
+        result.emplace_back(i.first + QString(" - ") + i.second);
+    }
+    MLog.write("Map Legend created");
+    return result;
 }
+
+std::vector<QString> Map::generateStandContent() {
+    std::vector<QString> result;
+    if (AroundCurrentHumanIter == std::vector<Object>::iterator()) {
+        result.push_back("None");
+        return result;
+    }
+    if (AroundCurrentHumanIter.base()->OType == "Stand") {
+        for (const auto& i : AroundCurrentHumanIter.base()->Content) {
+            result.push_back(QString(std::to_string(i).c_str()));
+        }
+    }
+    else {
+        result.push_back("None");
+    }
+    return result;
+}
+
+std::vector<QString> Map::generateToBuyList() {
+    std::vector<QString> result;
+    if (CurrentHuman == nullptr) {
+        result.push_back("None");
+    }
+    else {
+        for (const auto& i : CurrentHuman->ToBuyList) {
+            result.push_back(QString(std::to_string(i).c_str()));
+        }
+    }
+    return result;
+}
+
+std::vector<QString> Map::generateTakenProducts() {
+    std::vector<QString> result;
+    if (CurrentHuman == nullptr) {
+        result.push_back("None");
+    }
+    else {
+        for (const auto& i : CurrentHuman->TakenProducts) {
+            result.push_back(QString(std::to_string(i).c_str()));
+        }
+    }
+    return result;
+}
+//Map::Map() {
+//    MLog.open("Map.log");
+//    MLog.write("Map Initialized");
+//    CurrentHuman = nullptr;
+//    CurrentStandContent = nullptr;
+//    MStatus = MapStatus::Initialized;
+//}
+
+//bool Map::open(const QString& file) {
+//    clear();
+//    MLog.write("Openinig file " + file);
+//    Parser parser;
+//    if (parser.parse(file)) {
+//        AllObjects = parser.AllObjects;
+//        AllHumans = parser.AllHumans;
+//        MLog.write("File " + file + " parsed");
+//        MStatus = MapStatus::Parsed;
+//        return true;
+//    } else {
+//        MLog.write("Can`t parse file " + file, WriteTypes::Info);
+//        MLog.write("File " + file + " isn`t opened");
+//        return false;
+//    }
+//}
+//
+//void Map::clear() {
+//    MStatus = MapStatus::Initialized;
+//    AllObjects.clear();
+//    AllHumans.clear();
+//    BaseMap.clear();
+//    CurrentMap.clear();
+//    CurrentHuman = nullptr;
+//    CurrentStandContent = nullptr;
+//    MLog.write("Map is cleared");
+//}
+//
+//bool Map::create() {
+//    MLog.write("Creating map");
+//    std::vector<Object>::iterator pos = AllObjects.begin();
+//    if (pos->OType != "EmptySpace") {
+//        MLog.write("First object isn`t EmptySpace", WriteTypes::Info);
+//        MLog.write("Map creating stopped");
+//        return false;
+//    }
+//    ushort x = pos->Position.first, y = pos->Position.second;
+//    ushort X = x + pos->Size.first, Y = y + pos->Size.second;
+//    if (x >= X or y >= Y) {
+//        MLog.write("Position or size bad", WriteTypes::Info);
+//        MLog.write("Map creating stopped");
+//        return false;
+//    }
+//    BaseMap.resize(Y);
+//    for (auto& vect: BaseMap) {
+//        vect.resize(X);
+//    }
+//    ObjectMap.resize(Y);
+//    for (auto& vect: ObjectMap) {
+//        vect.resize(X);
+//    }
+//    while(pos != AllObjects.end()) {
+//        x = pos->Position.first, y = pos->Position.second;
+//        X = x + pos->Size.first, Y = y + pos->Size.second;
+//        std::cout << std::to_string(*pos) << std::endl;
+//        if (x >= X or y >= Y) {
+//            MLog.write("Position or size bad", WriteTypes::Info);
+//            MLog.write("Map creating stopped");
+//            return false;
+//        }
+//        for (ushort i = y; i < Y; i++) {
+//            for (ushort j = x; j < X; j++) {
+//                BaseMap[i][j] = pos->Symbol;
+//                ObjectMap[i][j] = pos.base();
+//            }
+//        }
+//        pos++;
+//    }
+//    MLog.write("Map created");
+//    CurrentMap = BaseMap;
+//    MStatus = MapStatus::Created;
+//    return true;
+//}
+//
+//bool Map::initialize() {
+//    try {
+//        clearHuman();
+//        CurrentHuman = CurrentHumanIndex.base();
+//        CurrentHumanWay = &CurrentHuman->Way;
+//        CurrentHumanWayIndex = CurrentHumanWay->begin();
+//        CurrentHumanToBuyList = &CurrentHuman->ToBuyList;
+//        HStatus = HumanStatus::New;
+//        MLog.write("Human Initialized");
+//        return true;
+//    }
+//    catch (...) {
+//        MLog.write("Can`t initialize Human", WriteTypes::Info);
+//        return false;
+//    }
+//}
+//
+//bool Map::move() {
+//    try {
+//        if (CurrentHumanWayIndex == CurrentHumanWay->end()) {
+//            HStatus == HumanStatus::Walked;
+//            return true;
+//        }
+//        else {
+//            MLog.write("Human moved");
+//            CurrentMap = BaseMap;
+//            CurrentMap[CurrentHumanWayIndex->second][CurrentHumanWayIndex->first] = CurrentHuman->Symbol;
+//            CurrentHumanWayIndex++;
+//            HStatus == HumanStatus::Walked;
+//            return true;
+//        }
+//    }
+//    catch (...) {
+//        MLog.write("Can`t set human position to next", WriteTypes::Info);
+//        return false;
+//    }
+//
+//}
+//
+//bool Map::look() {
+//    // Если вектор пуст, то создаём новый
+//    if (AroundCurrentHuman == nullptr) {
+//        AroundCurrentHuman = new std::vector<Object>{};
+//        std::pair<ushort, ushort> position = *(CurrentHumanWayIndex - 1).base();
+//        if (position.first - 1 > 0) {
+//            AroundCurrentHuman->emplace_back(*ObjectMap[position.second][position.first - 1]);
+//        }
+//        if (position.first + 1 < ObjectMap[0].size()) {
+//            AroundCurrentHuman->emplace_back(*ObjectMap[position.second][position.first + 1]);
+//        }
+//        if (position.second - 1 > 0) {
+//            AroundCurrentHuman->emplace_back(*ObjectMap[position.second - 1][position.first]);
+//        }
+//        if (position.second + 1 < ObjectMap.size()) {
+//            AroundCurrentHuman->emplace_back(*ObjectMap[position.second + 1][position.first]);
+//        }
+//        AroundCurrentHumanIndex = AroundCurrentHuman->begin();
+//    }
+//}
+//
+//bool Map::take() {
+//
+//}
+//
+//bool Map::buy() {
+//    
+//}
+//
+//bool Map::rebuild() {
+//    if (MStatus == MapStatus::Created) {
+//        MLog.write("Current human index set to start");
+//        CurrentHumanIndex = AllHumans.begin();
+//        return initialize();
+//    }
+//    else if (MStatus == MapStatus::Working) {
+//        if (HStatus == HumanStatus::New) {
+//            if (move()) {
+//                return true;
+//            }
+//            else {
+//                MStatus = MapStatus::Error;
+//                MLog.write("Current human isn`t movable. Aborting!", WriteTypes::Error);
+//                return false;
+//            }
+//        }
+//        else if (HStatus == HumanStatus::Walked) {
+//
+//        }
+//        else if (HStatus == HumanStatus::Looking) {
+//
+//        }
+//        else if (HStatus == HumanStatus::Taking) {
+//
+//        }
+//        else if (HStatus == HumanStatus::Buying) {
+//
+//        }
+//        else if (HStatus == HumanStatus::Done) {
+//
+//        }
+//        else {
+//
+//        }
+//    }
+//    else {
+//        MLog.write("Trying to call rebuild while map isn`t created", WriteTypes::Info);
+//        return false;
+//    }
+//}
+//
+//void Map::clearHuman() {
+//    HStatus = HumanStatus::Undefined;
+//    AroundCurrentHuman = nullptr;
+//    AroundCurrentHumanIndex = std::vector<Object>::iterator();
+//    CurrentHumanWay = nullptr;
+//    CurrentHumanWayIndex = std::vector<std::pair<ushort, ushort>>::iterator();
+//    CurrentHuman = nullptr;
+//    CurrentStandContent = nullptr;
+//    CurrentHumanToBuyList = nullptr;
+//}
 
 // std::ostream& operator<<(std::ostream& stream, const Map& map) {
 //     stream << "Map: " << map.getFileName() << std::endl;
