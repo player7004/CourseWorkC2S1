@@ -200,6 +200,10 @@ bool Parser::getHuman(const Json::Value& val, Human& res) {
     std::vector<std::pair<ushort, ushort>> Way{};
     // Список покупок
     std::vector<Product> ToBuyList{};
+    // Список взятых продуктов
+    std::vector<Product> TakenProducts{};
+    // Кол-во потраченных денег
+    ushort Money;
     // Если нет типа, то прекращаем
     if (!val["Type"]) {
         return false;
@@ -257,10 +261,37 @@ bool Parser::getHuman(const Json::Value& val, Human& res) {
     } else {
         return false;
     }
+    // Список взятых продуктов
+    if (val["TakenProducts"]) {
+        try {
+            for (const auto& i: val["TakenProducts"]) {
+                Product res;
+                if (getProduct(i, res)) {
+                    TakenProducts.push_back(res);
+                } else {
+                    continue;
+                }
+            }
+        } catch(...) {
+            return false;
+        }
+    }
+    // Кол-во потраченных денег
+    if (val["Money"]) {
+        try {
+            Money = val["Money"].asUInt();
+        } catch (...) {
+            return false;
+        }
+    } else {
+        Money = 0;
+    }
     res.Name = Name;
     res.Symbol = Symbol;
     res.ToBuyList = ToBuyList;
     res.Way = Way;
+    res.TakenProducts = TakenProducts;
+    res.Money = Money;
     return true;
 }
 
@@ -297,5 +328,109 @@ bool Parser::parse(const QString& file) {
             }
         }
     }
+    return true;
+}
+
+void Saver::saveObject(Json::Value &val, const Object &res) {
+    Json::Value result;
+    // Сохраняем тип
+    result["Type"] = res.Type.toStdString();
+    // Сохраняем имя
+    result["Name"] = res.Name.toStdString();
+    // Сохраняем символ
+    result["Symbol"] = QString(res.Symbol).toStdString();
+    // Сохраняем ОТип
+    result["OType"] = res.OType.toStdString();
+    // Сохраняем размер
+    Json::Value Size(Json::arrayValue);
+    Size.append(res.Size.first);
+    Size.append(res.Size.second);
+    result["Size"] = Size;
+    // Сохраняем Позицию
+    Json::Value Position(Json::arrayValue);
+    Position.append(res.Position.first);
+    Position.append(res.Position.second);
+    result["Position"] = Position;
+    // Сохранеям содержимое
+    Json::Value Content(Json::arrayValue);
+    for (const auto& i: res.Content) {
+        saveProduct(Content, i);
+    }
+    result["Content"] = Content;
+    val.append(result);
+}
+
+void Saver::saveProduct(Json::Value &val, const Product &res) {
+    Json::Value result;
+    // Сохраняем имя
+    result["Name"] = res.Name.toStdString();
+    // Сохраняем тип
+    result["Type"] = res.Type.toStdString();
+    // Сохраняем ПТип
+    result["PType"] = res.PType.toStdString();
+    // Сохраняем цену
+    result["Price"] = res.Price;
+    // Сохраняем привлекательность
+    result["Attractiveness"] = res.Attractiveness;
+    val.append(result);
+}
+
+void Saver::saveHuman(Json::Value& val, const Human &res) {
+    Json::Value result;
+    // Сохраняем тип
+    result["Type"] = res.Type.toStdString();
+    // Сохраняем имя
+    result["Name"] = res.Name.toStdString();
+    // Сохраняем Список покупок
+    Json::Value ToBuyList(Json::arrayValue);
+    for (const auto& i: res.ToBuyList) {
+        saveProduct(ToBuyList, i);
+    }
+    result["ToBuyList"] = ToBuyList;
+    // Сохраняем список взятых покупок
+    Json::Value TakenProducts(Json::arrayValue);
+    for (const auto& i: res.TakenProducts) {
+        saveProduct(TakenProducts, i);
+    }
+    result["TakenProducts"] = TakenProducts;
+    // Сохраняем путь
+    Json::Value Way(Json::arrayValue);
+    for (const auto& i: res.Way) {
+        Json::Value sit(Json::arrayValue);
+        sit.append(i.first);
+        sit.append(i.second);
+        Way.append(sit);
+    }
+    result["Way"] = Way;
+    // Сохраняем символ
+    result["Symbol"] = QString(res.Symbol).toStdString();
+    // Сохраняем деньги
+    result["Money"] = res.Money;
+    val.append(result);
+}
+
+bool Saver::save(const QString &filename, const std::vector<Human>& AllHumans, const std::vector<Object>& AllObjects) {
+    std::ofstream file(filename.toStdString());
+    if (!file.is_open()) {
+        return false;
+    }
+    // Здесь хранится общий результат
+    Json::Value result;
+    // Сюда объекты сохраним
+    Json::Value objects(Json::arrayValue);
+    // Cюда людей сохраним
+    Json::Value humans(Json::arrayValue);
+    for (const auto& i: AllHumans) {
+        saveHuman(humans, i);
+    }
+    for (const auto& i: AllObjects) {
+        saveObject(objects, i);
+    }
+    result["Objects"] = objects;
+    result["Humans"] = humans;
+
+    file << result << std::endl;
+    file.flush();
+    file.close();
     return true;
 }

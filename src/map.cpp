@@ -1,8 +1,6 @@
 #include "map.hpp"
 
 Map::Map() {
-	MLog.open("Map.Log");
-	MLog.write("Map Initialized");
 	Status = MapStatus::Initialized;
     CurrentHumanIter = {};
     CurrentHuman = nullptr;
@@ -13,22 +11,18 @@ Map::Map() {
 }
 
 Map::~Map() {
-	MLog.write("Map Closed");
 }
 
 bool Map::open(const QString& file) {
 	clear();
-	MLog.write("Opening file " + file);
 	Parser obj;
 	if (obj.parse(file)) {
 		AllObjects = obj.AllObjects;
 		AllHumans = obj.AllHumans;
-		MLog.write("File " + file + " sucessfuly parsed");
 		Status = MapStatus::Opened;
 		return true;
 	}
 	else {
-		MLog.write("File " + file + " can`t be parsed", WriteTypes::Info);
 		Status = MapStatus::Error;
 		return false;
 	}
@@ -36,21 +30,15 @@ bool Map::open(const QString& file) {
 
 bool Map::create() {
     if (Status != MapStatus::Opened) {
-        MLog.write("An attempt to create map without opening file", WriteTypes::Info);
         return false;
     }
-	MLog.write("Starting to create Map");
     auto pos = AllObjects.begin();
     if (pos->OType != "EmptySpace") {
-        MLog.write("First object isn`t EmptySpace", WriteTypes::Info);
-        MLog.write("Map creating stopped");
         return false;
     }
     ushort x = pos->Position.first, y = pos->Position.second;
     ushort X = x + pos->Size.first, Y = y + pos->Size.second;
     if (x >= X or y >= Y) {
-        MLog.write("Position or size bad", WriteTypes::Info);
-        MLog.write("Map creating stopped");
         return false;
     }
     BaseMap.resize(Y);
@@ -65,8 +53,6 @@ bool Map::create() {
         x = pos->Position.first, y = pos->Position.second;
         X = x + pos->Size.first, Y = y + pos->Size.second;
         if (x >= X or y >= Y) {
-            MLog.write("Position or size bad", WriteTypes::Info);
-            MLog.write("Map creating stopped");
             return false;
         }
         for (ushort i = y; i < Y; i++) {
@@ -78,11 +64,9 @@ bool Map::create() {
         pos++;
     }
     Status = MapStatus::Created;
-    MLog.write("Map created");
     updateOutMap();
     if (AllHumans.empty()) {
         Status = MapStatus::Done;
-        MLog.write("No more humans, the work is done");
     } else {
         CurrentHumanIter = AllHumans.begin();
         initializeHuman();
@@ -91,7 +75,6 @@ bool Map::create() {
 }
 
 void Map::clear() {
-	MLog.write("The map was cleared");
 	Status = MapStatus::Initialized;
 	AllObjects.clear();
 	AllHumans.clear();
@@ -99,27 +82,20 @@ void Map::clear() {
 }
 
 void Map::rebuild() {
-    MLog.write("Rebuilding map");
-    MLog.switchPrefix();
     if (Status == MapStatus::Initialized) {
-        MLog.write("An attempt to rebuild map, without opening and creating it", WriteTypes::Info);
         return;
     }
     if (Status == MapStatus::Opened) {
-        MLog.write("An attempt to rebuild map, without creating it", WriteTypes::Info);
         return;
     }
     if (Status == MapStatus::Created) {
         Status = MapStatus::Working;
-        MLog.write("Map is starting to work");
     }
     if (Status == MapStatus::Error) {
-        MLog.write("An attempt to rebuild map while an error has occurred", WriteTypes::Info);
         return;
     }
     if (Status == MapStatus::Done) {
         updateOutMap();
-        MLog.write("It`s done");
     }
     if (Status == MapStatus::Working) {
         if (HStatus == HumanStatus::None) {
@@ -138,12 +114,9 @@ void Map::rebuild() {
             return;
         }
     }
-    MLog.switchPrefix();
-    MLog.write("Rebuilding is done");
 }
 
 void Map::initializeHuman() {
-    MLog.write("Initializing human");
     if (CurrentHumanIter == std::vector<Human>::iterator()) {
         Status = MapStatus::Error;
         return;
@@ -152,7 +125,6 @@ void Map::initializeHuman() {
         Status = MapStatus::Done;
         changeHStatus(HumanStatus::End);
         clearHuman();
-        MLog.write("No more humans, the work is done");
     } else {
         CurrentHuman = CurrentHumanIter.base();
         CurrentHumanIter++;
@@ -160,41 +132,31 @@ void Map::initializeHuman() {
         updateOutMap();
         changeHStatus(HumanStatus::Initialized);
     }
-    if (CurrentHuman != nullptr) {
-        MLog.write("New human " + CurrentHuman->Name + " is initialized");
-    }
 }
 
 void Map::clearHuman() {
-    MLog.write("Clearing Human");
     CurrentHuman = nullptr;
     changeHStatus(HumanStatus::End);
     CurrentHumanIter = {};
     CurrentHumanWayIter = {};
     AroundCurrentHumanIter = {};
     AroundCurrentHuman = {};
-    MLog.write("Human cleared");
 }
 
 void Map::resetHuman() {
-    MLog.write("Resetting human");
     CurrentHuman = nullptr;
     changeHStatus(HumanStatus::None);
     AroundCurrentHuman.clear();
     AroundCurrentHumanIter = {};
     CurrentHumanWayIter = {};
-    MLog.write("Human reset");
 }
 
 void Map::move() {
-    MLog.write("Moving human");
     if (CurrentHumanWayIter == CurrentHuman->Way.end()) {
         if (CurrentHuman->TakenProducts.empty() and CurrentHuman->ToBuyList.empty()) {
             changeHStatus(HumanStatus::Done);
-            MLog.write("All humans passed");
         } else {
             changeHStatus(HumanStatus::Error);
-            MLog.write("An error occurred");
         }
     }
     if (HStatus == HumanStatus::Initialized) {
@@ -213,19 +175,15 @@ void Map::move() {
             changeHStatus(HumanStatus::Looking);
         }
     }
-    MLog.write("Human Moved");
 }
 
 void Map::placeHuman() {
-    MLog.write("Placing human");
     auto pos = CurrentHumanWayIter.base();
     updateOutMap();
     OutMap[pos->first][pos->second] = CurrentHuman->Symbol;
-    MLog.write("Human placed");
 }
 
 void Map::look() {
-    MLog.write("Human is looking");
     if (AroundCurrentHuman.empty() and AroundCurrentHumanIter == std::vector<Object>::iterator()) {
         QString Type;
         if (CurrentHuman->ToBuyList.empty()) {
@@ -233,7 +191,6 @@ void Map::look() {
         } else {
             Type = "Stand";
         }
-        MLog.write("Human is looking for " + Type);
         auto pos = (CurrentHumanWayIter - 1).base();
         // Слева
         if (pos->first - 1 >= 0) {
@@ -263,7 +220,6 @@ void Map::look() {
             changeHStatus(HumanStatus::Walked);
             return;
         }
-        MLog.write("Found " + QString(std::to_string(AroundCurrentHuman.size()).c_str()) + " objects");
         AroundCurrentHumanIter = AroundCurrentHuman.begin();
         if (Type == "Stand") {
             changeHStatus(HumanStatus::Taking);
@@ -273,12 +229,10 @@ void Map::look() {
     } else {
         AroundCurrentHumanIter++;
         if (AroundCurrentHumanIter == AroundCurrentHuman.end()) {
-            MLog.write("Everything around is looked");
             changeHStatus(HumanStatus::Walked);
             AroundCurrentHumanIter = {};
             AroundCurrentHuman.clear();
         } else {
-            MLog.write("Human is looking for " + AroundCurrentHumanIter.base()->Type);
             if (AroundCurrentHumanIter.base()->Type == "CashBox") {
                 changeHStatus(HumanStatus::Buying);
             } else {
@@ -286,11 +240,9 @@ void Map::look() {
             }
         }
     }
-    MLog.write("Human looked");
 }
 
 void Map::take() {
-    MLog.write("Human is taking");
     std::vector<std::vector<Product>::iterator> toDelete;
     for (auto i = CurrentHuman->ToBuyList.begin(); i != CurrentHuman->ToBuyList.end(); i++) {
         std::vector<Product> found;
@@ -302,7 +254,6 @@ void Map::take() {
         }
         // Если таких нет, то прост идём дальше
         if (found.empty()) {
-            MLog.write("Nothing found");
             continue;
         }
         // Ищем наименьшее значение
@@ -316,26 +267,20 @@ void Map::take() {
             }
         }
         toDelete.push_back(i);
-        MLog.write("Adding " + chosen->Type + " to Taking products");
         CurrentHuman->TakenProducts.push_back(*chosen.base());
     }
     for (const auto& i: toDelete) {
         CurrentHuman->ToBuyList.erase(i);
-        MLog.write("Deleting " + i.base()->Type + " from ToBuyList");
     }
     changeHStatus(HumanStatus::Looking);
-    MLog.write("Human took everything");
 }
 
 void Map::buy() {
-    MLog.write("Human is buying");
     for (const auto& i: CurrentHuman->TakenProducts) {
         CurrentHuman->Money += i.Price;
-        MLog.write("Deleting " + i.Type + " from TakenProducts");
     }
     CurrentHuman->TakenProducts.clear();
     changeHStatus(HumanStatus::Looking);
-    MLog.write("Human bought");
 }
 
 void Map::updateOutMap() {
@@ -348,11 +293,9 @@ void Map::updateOutMap() {
 		result.push_back(str);
 	}
 	OutMap = result;
-	MLog.write("Out Map Updated");
 }
 
 std::vector<QString> Map::generateMapLegend() {
-    MLog.write("Creating Map Legend");
     std::map<QChar, QString> Dict;
     // Вносим Объекты
     for (const auto& i : AllObjects) {
@@ -360,14 +303,12 @@ std::vector<QString> Map::generateMapLegend() {
             Dict.insert({ i.Symbol, i.OType });
         }
     }
-    MLog.write("Objects Legend created");
     // Вносим людей
     for (const auto& i : AllHumans) {
         if (Dict.find(i.Symbol) == Dict.end()) {
             Dict.insert({ i.Symbol, i.Type });
         }
     }
-    MLog.write("Humans Legend Created");
     // Результат
     std::vector<QString> result;
     // Переносим результат
@@ -375,12 +316,10 @@ std::vector<QString> Map::generateMapLegend() {
     for (const auto& i : Dict) {
         result.emplace_back(i.first + QString(" - ") + i.second);
     }
-    MLog.write("Map Legend created");
     return result;
 }
 
 std::vector<QString> Map::generateStandContent() {
-    MLog.write("Generating stand content");
     std::vector<QString> result;
     if (AroundCurrentHumanIter == std::vector<Object>::iterator()) {
         result.emplace_back("None");
@@ -394,12 +333,10 @@ std::vector<QString> Map::generateStandContent() {
     else {
         result.emplace_back("Empty");
     }
-    MLog.write("Stand content generated");
     return result;
 }
 
 std::vector<QString> Map::generateToBuyList() {
-    MLog.write("Generating ToBuyList");
     std::vector<QString> result;
     if (CurrentHuman == nullptr) {
         result.emplace_back("None");
@@ -413,12 +350,10 @@ std::vector<QString> Map::generateToBuyList() {
             result.emplace_back(std::to_string(i).c_str());
         }
     }
-    MLog.write("ToBuyList generated");
     return result;
 }
 
 std::vector<QString> Map::generateTakenProducts() {
-    MLog.write("Generating TakenProducts");
     std::vector<QString> result;
     if (CurrentHuman == nullptr) {
         result.emplace_back("None");
@@ -429,19 +364,16 @@ std::vector<QString> Map::generateTakenProducts() {
             result.emplace_back(std::to_string(i).c_str());
         }
     }
-    MLog.write("TakenProducts generated");
     return result;
 }
 
 std::vector<QString> Map::generateCurrentHumanInfo() {
-    MLog.write("Generating CurrentHumanInfo");
     std::vector<QString> result;
     if (CurrentHuman == nullptr) {
         result.emplace_back("None");
     } else {
         result.emplace_back(std::to_string(*CurrentHuman).c_str());
     }
-    MLog.write("CurrentHumanInfo generated");
     return result;
 }
 
@@ -459,7 +391,6 @@ std::vector<QString> Map::generateAllHumans() {
 
 void inline Map::changeHStatus(const HumanStatus& status) {
     HStatus = status;
-    MLog.write("Human status change to " + QString(std::to_string(status).c_str()));
 }
 
 std::string std::to_string(const HumanStatus& status) {

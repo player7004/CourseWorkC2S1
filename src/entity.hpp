@@ -5,7 +5,6 @@
 #include <vector>
 #include <set>
 #include <exception>
-#include "log.hpp"
 
 
 const std::set<QString> Types {

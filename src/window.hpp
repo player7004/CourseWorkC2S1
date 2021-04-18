@@ -23,16 +23,16 @@ enum class ModeStatuses {
 };
 
 enum class ToDrawItem {
-    // Список покупок
-    ToBuyList = 0,
-    // Взятые продукты
-    TakenProducts,
-    // Содержание стенды
-    StandContent,
     // Легенда карты
     MapLegend,
     // Информация о текущем человеке
     HumanInfo,
+    // Список покупок
+    ToBuyList,
+    // Взятые продукты
+    TakenProducts,
+    // Содержание стенды
+    StandContent,
     // Все имеющиеся люди
     AllHumans
 };
@@ -45,13 +45,6 @@ enum class ThreadStatuses {
     // Дана команда на остановку
     Stopping
 };
-
-namespace std {
-    // преобразование в строку для ToDrawItem
-    string to_string(ToDrawItem val);
-    // преобразование в строку для ModeStatuses
-    string to_string(ModeStatuses val);
-}
 
 QT_BEGIN_NAMESPACE
 
@@ -77,10 +70,6 @@ public:
     QRadioButton* AutoModeButton;
     // Окно с графикой
     QListWidget* GraphicView;
-    // Указывает задержку автоматического режима
-    QSpinBox* DelaySpin;
-    // Надпись
-    QLabel* DelayLabel;
     // Конструктор
     Window();
     // Закрытие окна
@@ -99,17 +88,13 @@ public:
     // Отображаемый объект
     ToDrawItem Item;
     // Очищает окно графики
-    void resetGraphic();
+    void inline resetGraphic() {
+        GraphicView->clear();
+    };
     // Отрисовывает графику
     void drawGraphics();
     // Отображает лист информации
     void drawInfoList();
-    // Лог окна
-    Log WLog;
-    // Задержка автоматического режима
-    std::atomic<unsigned short> Delay;
-    // Карта
-    // Map WMap;
     // Поток для автоматического режима
     std::thread* Worker = nullptr;
     // Статус потока
@@ -122,8 +107,6 @@ public:
     void startThread();
     // Индикатор работы потока
     std::atomic<bool> running;
-    // Текущее время ожидания
-    std::atomic<ushort> currentDelay;
     // Карта
     Map WMap;
 };

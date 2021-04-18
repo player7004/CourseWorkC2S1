@@ -5,13 +5,12 @@
 #include "window.hpp"
 
 Window::Window() {
-    WLog.write("Window Initializing");
     try {
         setupUI();
         setupBase();
         connectUI();
+        drawInfoList();
     } catch (...) {
-        WLog.write("Can`t initialize window", WriteTypes::Error);
         this->close();
     }
 }
@@ -22,10 +21,8 @@ void Window::closeEvent(QCloseEvent* event) {
 }
 
 void Window::connectUI() {
-    WLog.write("Connecting Buttons");
     // Закрывает окно
     auto QuitFunc = [this]{
-        WLog.write("Closing window");
         stopThread();
         this->close();
     };
@@ -35,13 +32,11 @@ void Window::connectUI() {
     auto SetManualModeFunc = [this] {
         this->Mode = ModeStatuses::Manual;
         stopThread();
-        WLog.write("Mode set to Manual");
     };
     // Меняет режим работы на автоматический
     auto SetAutoModeFunc = [this] {
         this->Mode = ModeStatuses::Auto;
         startThread();
-        WLog.write("Mode set to Auto");
     };
     connect(ManualModeButton, &QRadioButton::clicked, SetManualModeFunc);
     connect(AutoModeButton, &QRadioButton::clicked, SetAutoModeFunc);
@@ -50,20 +45,8 @@ void Window::connectUI() {
     auto SetToDrawItemFunc = [this](int index) {
         this->Item = static_cast<ToDrawItem>(index);
         drawInfoList();
-        // this->drawItem();
-        QString str = std::to_string(Item).c_str();
-        WLog.write("Item to draw set to " + str);
     };
     connect(MenuBox, QOverload<int>::of(&QComboBox::currentIndexChanged), SetToDrawItemFunc);
-
-    // Меняет задержку автоматического режима на указанную
-    auto SetDelayFunc = [this](int delay) {
-        Delay = delay;
-        QString str = "Delay changed to: ";
-        str += std::to_string(delay).c_str();
-        WLog.write(str);
-    };
-    connect(DelaySpin, QOverload<int>::of(&QSpinBox::valueChanged), SetDelayFunc);
 
     // Меняет карту
     auto LoadNewFileFunc = [this] {
@@ -73,7 +56,6 @@ void Window::connectUI() {
         WMap.clear();
         WMap.open(str);
         WMap.create();
-        WLog.write("File changed to " + str);
     };
     connect(LoadShopButton, &QPushButton::clicked, LoadNewFileFunc);
 
@@ -84,20 +66,15 @@ void Window::connectUI() {
             this->Mode = ModeStatuses::Manual;
             this->ManualModeButton->setChecked(true);
             this->AutoModeButton->setChecked(false);
-            WLog.write("Mode status set to auto by force");
         }
         WMap.rebuild();
         this->drawGraphics();
         this->drawInfoList();
-        WLog.write("Next step button was clicked");
     };
     connect(NextStepButton, &QPushButton::clicked, NextStepFunc);
-
-    WLog.write("UI connected");
 }
 
 void Window::setupUI() {
-    WLog.write("Setting up UI");
     // Основное окно
     this->resize(500, 400);
     this->setMinimumSize(500, 400);
@@ -105,11 +82,11 @@ void Window::setupUI() {
     // Меню
     MenuBox = new QComboBox(this);
     MenuBox->setGeometry(335, 40, 160, 30);
+    MenuBox->addItem("Легенда карты");
+    MenuBox->addItem("Информация о человеке");
     MenuBox->addItem("Список покупок");
     MenuBox->addItem("Взятые продукты");
     MenuBox->addItem("Содержание стенда");
-    MenuBox->addItem("Легенда карты");
-    MenuBox->addItem("Информация о человеке");
     MenuBox->addItem("Список всех людей");
     // Кнопка Смены файла
     LoadShopButton = new QPushButton(this);
@@ -138,52 +115,28 @@ void Window::setupUI() {
     // Окно просматра графики
     GraphicView = new QListWidget(this);
     GraphicView->setGeometry(5, 5, 325, 325);
-    QFont gfont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-    gfont.setPointSize(20);
-    GraphicView->setFont(gfont);
-    // Окно изменения задержки
-    DelaySpin = new QSpinBox(this);
-    DelaySpin->setGeometry(280, 365, 50, 30);
-    DelaySpin->setValue(2);
-    DelaySpin->setMaximum(60);
-    DelaySpin->setMinimum(1);
-    // Надпись Задержка(с): 
-    DelayLabel = new QLabel(this);
-    DelayLabel->setText(QString("Задержка(с): "));
-    DelayLabel->setGeometry(200, 330, 120, 30);
-    QFont font;
-    font.setPointSize(12);
-    DelayLabel->setFont(font);
+    QFont font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    font.setPointSize(20);
+    GraphicView->setFont(font);
     
     this->show();
-
-    WLog.write("UI set up");
 }
 
 void Window::setupBase() {
-    WLog.open("Window.log");
     Mode = ModeStatuses::Manual;
     Item = ToDrawItem::MapLegend;
-    Delay = 2;
     running = true;
     Worker = new std::thread(ThreadFunc, this);
     Worker->detach();
     TStatus = ThreadStatuses::Sleeping;
     WMap.open("Shop2.json");
     WMap.create();
-    WLog.write("Base set up");
 }
 
 void Window::clearWindow() {
     stopThread();
     resetGraphic();
     InfoList->clear();
-    WLog.write("Window cleared");
-}
-
-void Window::resetGraphic() {
-    GraphicView->clear();
-    WLog.write("Graphics window cleared");
 }
 
 void Window::drawGraphics() {
@@ -191,7 +144,6 @@ void Window::drawGraphics() {
     for (const auto& i : WMap.OutMap) {
         GraphicView->addItem(i);
     }
-    WLog.write("Graphics drown");
 }
 
 void Window::drawInfoList() {
@@ -226,51 +178,15 @@ void Window::drawInfoList() {
     }
 }
 
-std::string std::to_string(ToDrawItem val) {
-    switch (val)
-    {
-    case ToDrawItem::ToBuyList:
-        return "ToBuyList";
-    case ToDrawItem::MapLegend:
-        return "MapLegend";
-    case ToDrawItem::StandContent:
-        return "StandContent";
-    case ToDrawItem::TakenProducts:
-        return "TakenProducts";
-    default:
-        return "";
-    }
-}
-
-std::string std::to_string(ModeStatuses val) {
-    switch (val)
-    {
-    case ModeStatuses::Auto:
-        return "Auto";
-    case ModeStatuses::Manual:
-        return "Manual";
-    default:
-        return "";
-    }
-}
-
 void Window::ThreadFunc(Window* object) {
-    object->WLog.write("Thread started");
-    object->currentDelay = 0;
     while (object->running) {
         if (object->TStatus == ThreadStatuses::Running) {
-            if (object->currentDelay > object->Delay) {
-                object->WMap.rebuild();
-                object->drawGraphics();
-                object->drawInfoList();
-                object->currentDelay = 0;
-            } else {
-                object->currentDelay += 2;
-            }
+            object->WMap.rebuild();
+            object->drawGraphics();
+            object->drawInfoList();
         }
         if (object->TStatus == ThreadStatuses::Stopping) {
             object->TStatus = ThreadStatuses::Sleeping;
-            object->currentDelay = 0;
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
@@ -278,16 +194,11 @@ void Window::ThreadFunc(Window* object) {
 }
 
 void Window::stopThread() {
-    WLog.write("Stopping thread");
     this->TStatus = ThreadStatuses::Stopping;
     // В теории в данном случае необязательно ждать завершения поток
     while (this->TStatus != ThreadStatuses::Sleeping);
-    WLog.write("Thread stopped");
 }
 
 void Window::startThread() {
     TStatus = ThreadStatuses::Running;
-    //while (TStatus != ThreadStatuses::Sleeping);
-    //Worker.detach();
-    WLog.write("Thread started");
 }

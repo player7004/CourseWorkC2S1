@@ -16,7 +16,7 @@ private:
     // Возвращает объект
     static bool getObject(const Json::Value& val, Object& res);
     // Возвращает человека
-    bool getHuman(const Json::Value& val, Human& res);
+    static bool getHuman(const Json::Value& val, Human& res);
 public:
     // Все имющиеся объекты
     std::vector<Object> AllObjects;
@@ -26,4 +26,16 @@ public:
     bool parse(const QString& file);
     // Конструктор
     Parser();
+};
+
+class Saver {
+private:
+    // Сохраняет продукт
+    void static saveProduct(Json::Value& val, const Product& res);
+    // Сохраняет объект
+    void static saveObject(Json::Value& val, const Object& res);
+    // Сохраняет человека
+    void static saveHuman(Json::Value& val, const Human& res);
+public:
+    static bool save(const QString &filename, const std::vector<Human>& AllHumans, const std::vector<Object>& AllObjects);
 };

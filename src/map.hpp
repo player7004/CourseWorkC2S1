@@ -46,12 +46,9 @@ namespace std {
 
 
 // Карта
-class Map {
+class Map: public Saver {
 private:
-    // Здесь лежат все имеющиеся объекты
-    std::vector<Object> AllObjects;
-    // Здесь лежат все имеющиеся люди
-    std::vector<Human> AllHumans;
+
 
     // То что связано с картой в смысле её графического представления
     // Базовая карта
@@ -94,9 +91,12 @@ private:
     // Свойства и атрибуты карты
     // Статус карты
     MapStatus Status;
-    // Собственный лог карты
-    Log MLog;
 public:
+    // Здесь лежат все имеющиеся объекты
+    std::vector<Object> AllObjects;
+    // Здесь лежат все имеющиеся люди
+    std::vector<Human> AllHumans;
+
     // Карта на выход
     std::vector<QString> OutMap;
 

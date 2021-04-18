@@ -34,8 +34,6 @@ add_executable(CourseWork
             src/map.hpp
             src/parser.cpp
             src/parser.hpp
-            src/log.hpp
-            src/log.cpp
             src/dist/jsoncpp.cpp
             src/dist/json/json.h
             src/dist/json/json-forwards.h
