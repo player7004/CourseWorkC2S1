@@ -30,7 +30,11 @@ enum class ToDrawItem {
     // Содержание стенды
     StandContent,
     // Легенда карты
-    MapLegend
+    MapLegend,
+    // Информация о текущем человеке
+    HumanInfo,
+    // Все имеющиеся люди
+    AllHumans
 };
 
 enum class ThreadStatuses {
@@ -99,7 +103,7 @@ public:
     // Отрисовывает графику
     void drawGraphics();
     // Отображает лист информации
-    void drawInfoList() const;
+    void drawInfoList();
     // Лог окна
     Log WLog;
     // Задержка автоматического режима
@@ -118,8 +122,10 @@ public:
     void startThread();
     // Индикатор работы потока
     std::atomic<bool> running;
-    //
+    // Текущее время ожидания
     std::atomic<ushort> currentDelay;
+    // Карта
+    Map WMap;
 };
 
 QT_END_NAMESPACE

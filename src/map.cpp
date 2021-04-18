@@ -9,7 +9,7 @@ Map::Map() {
     AroundCurrentHuman = {};
     AroundCurrentHumanIter = {};
     CurrentHumanWayIter = {};
-    HStatus = HumanStatus::None;
+    changeHStatus(HumanStatus::None);
 }
 
 Map::~Map() {
@@ -35,8 +35,12 @@ bool Map::open(const QString& file) {
 }
 
 bool Map::create() {
+    if (Status != MapStatus::Opened) {
+        MLog.write("An attempt to create map without opening file", WriteTypes::Info);
+        return false;
+    }
 	MLog.write("Starting to create Map");
-    std::vector<Object>::iterator pos = AllObjects.begin();
+    auto pos = AllObjects.begin();
     if (pos->OType != "EmptySpace") {
         MLog.write("First object isn`t EmptySpace", WriteTypes::Info);
         MLog.write("Map creating stopped");
@@ -76,6 +80,13 @@ bool Map::create() {
     Status = MapStatus::Created;
     MLog.write("Map created");
     updateOutMap();
+    if (AllHumans.empty()) {
+        Status = MapStatus::Done;
+        MLog.write("No more humans, the work is done");
+    } else {
+        CurrentHumanIter = AllHumans.begin();
+        initializeHuman();
+    }
     return true;
 }
 
@@ -84,12 +95,248 @@ void Map::clear() {
 	Status = MapStatus::Initialized;
 	AllObjects.clear();
 	AllHumans.clear();
+	clearHuman();
 }
 
 void Map::rebuild() {
-
+    MLog.write("Rebuilding map");
+    MLog.switchPrefix();
+    if (Status == MapStatus::Initialized) {
+        MLog.write("An attempt to rebuild map, without opening and creating it", WriteTypes::Info);
+        return;
+    }
+    if (Status == MapStatus::Opened) {
+        MLog.write("An attempt to rebuild map, without creating it", WriteTypes::Info);
+        return;
+    }
+    if (Status == MapStatus::Created) {
+        Status = MapStatus::Working;
+        MLog.write("Map is starting to work");
+    }
+    if (Status == MapStatus::Error) {
+        MLog.write("An attempt to rebuild map while an error has occurred", WriteTypes::Info);
+        return;
+    }
+    if (Status == MapStatus::Done) {
+        updateOutMap();
+        MLog.write("It`s done");
+    }
+    if (Status == MapStatus::Working) {
+        if (HStatus == HumanStatus::None) {
+            initializeHuman();
+        } else if (HStatus == HumanStatus::Initialized or HStatus == HumanStatus::Walked) {
+            move();
+        } else if (HStatus == HumanStatus::Looking) {
+            look();
+        } else if (HStatus == HumanStatus::Taking) {
+            take();
+        } else if (HStatus == HumanStatus::Buying) {
+            buy();
+        } else if (HStatus == HumanStatus::Done or HStatus == HumanStatus::Error) {
+            resetHuman();
+        } else if(HStatus == HumanStatus::End) {
+            return;
+        }
+    }
+    MLog.switchPrefix();
+    MLog.write("Rebuilding is done");
 }
 
+void Map::initializeHuman() {
+    MLog.write("Initializing human");
+    if (CurrentHumanIter == std::vector<Human>::iterator()) {
+        Status = MapStatus::Error;
+        return;
+    }
+    if (CurrentHumanIter == AllHumans.end()) {
+        Status = MapStatus::Done;
+        changeHStatus(HumanStatus::End);
+        clearHuman();
+        MLog.write("No more humans, the work is done");
+    } else {
+        CurrentHuman = CurrentHumanIter.base();
+        CurrentHumanIter++;
+        CurrentHumanWayIter = CurrentHuman->Way.begin();
+        updateOutMap();
+        changeHStatus(HumanStatus::Initialized);
+    }
+    if (CurrentHuman != nullptr) {
+        MLog.write("New human " + CurrentHuman->Name + " is initialized");
+    }
+}
+
+void Map::clearHuman() {
+    MLog.write("Clearing Human");
+    CurrentHuman = nullptr;
+    changeHStatus(HumanStatus::End);
+    CurrentHumanIter = {};
+    CurrentHumanWayIter = {};
+    AroundCurrentHumanIter = {};
+    AroundCurrentHuman = {};
+    MLog.write("Human cleared");
+}
+
+void Map::resetHuman() {
+    MLog.write("Resetting human");
+    CurrentHuman = nullptr;
+    changeHStatus(HumanStatus::None);
+    AroundCurrentHuman.clear();
+    AroundCurrentHumanIter = {};
+    CurrentHumanWayIter = {};
+    MLog.write("Human reset");
+}
+
+void Map::move() {
+    MLog.write("Moving human");
+    if (CurrentHumanWayIter == CurrentHuman->Way.end()) {
+        if (CurrentHuman->TakenProducts.empty() and CurrentHuman->ToBuyList.empty()) {
+            changeHStatus(HumanStatus::Done);
+            MLog.write("All humans passed");
+        } else {
+            changeHStatus(HumanStatus::Error);
+            MLog.write("An error occurred");
+        }
+    }
+    if (HStatus == HumanStatus::Initialized) {
+        placeHuman();
+        CurrentHumanWayIter++;
+        changeHStatus(HumanStatus::Walked);
+        return;
+    }
+    if (HStatus == HumanStatus::Walked) {
+        if (CurrentHuman->ToBuyList.empty() and CurrentHuman->TakenProducts.empty()) {
+            placeHuman();
+            CurrentHumanWayIter++;
+        } else {
+            placeHuman();
+            CurrentHumanWayIter++;
+            changeHStatus(HumanStatus::Looking);
+        }
+    }
+    MLog.write("Human Moved");
+}
+
+void Map::placeHuman() {
+    MLog.write("Placing human");
+    auto pos = CurrentHumanWayIter.base();
+    updateOutMap();
+    OutMap[pos->first][pos->second] = CurrentHuman->Symbol;
+    MLog.write("Human placed");
+}
+
+void Map::look() {
+    MLog.write("Human is looking");
+    if (AroundCurrentHuman.empty() and AroundCurrentHumanIter == std::vector<Object>::iterator()) {
+        QString Type;
+        if (CurrentHuman->ToBuyList.empty()) {
+            Type = "CashBox";
+        } else {
+            Type = "Stand";
+        }
+        MLog.write("Human is looking for " + Type);
+        auto pos = (CurrentHumanWayIter - 1).base();
+        // Слева
+        if (pos->first - 1 >= 0) {
+            if (ObjectMap[pos->first -1][pos->second]->Type == Type) {
+                AroundCurrentHuman.push_back(*ObjectMap[pos->first - 1][pos->second]);
+            }
+        }
+        // Справа
+        if (pos->first + 1 < ObjectMap.size()) {
+            if (ObjectMap[pos->first + 1][pos->second]->Type == Type) {
+                AroundCurrentHuman.push_back(*ObjectMap[pos->first + 1][pos->second]);
+            }
+        }
+        // Сверху
+        if (pos->second - 1 >= 0) {
+            if (ObjectMap[pos->first][pos->second - 1]->OType == Type) {
+                AroundCurrentHuman.push_back(*ObjectMap[pos->first][pos->second - 1]);
+            }
+        }
+        // Снизу
+        if (pos->first + 1 < ObjectMap.back().size()) {
+            if (ObjectMap[pos->first][pos->second + 1]->Type == Type) {
+                AroundCurrentHuman.push_back(*ObjectMap[pos->first][pos->second + 1]);
+            }
+        }
+        if (AroundCurrentHuman.empty()) {
+            changeHStatus(HumanStatus::Walked);
+            return;
+        }
+        MLog.write("Found " + QString(std::to_string(AroundCurrentHuman.size()).c_str()) + " objects");
+        AroundCurrentHumanIter = AroundCurrentHuman.begin();
+        if (Type == "Stand") {
+            changeHStatus(HumanStatus::Taking);
+        } else {
+            changeHStatus(HumanStatus::Buying);
+        }
+    } else {
+        AroundCurrentHumanIter++;
+        if (AroundCurrentHumanIter == AroundCurrentHuman.end()) {
+            MLog.write("Everything around is looked");
+            changeHStatus(HumanStatus::Walked);
+            AroundCurrentHumanIter = {};
+            AroundCurrentHuman.clear();
+        } else {
+            MLog.write("Human is looking for " + AroundCurrentHumanIter.base()->Type);
+            if (AroundCurrentHumanIter.base()->Type == "CashBox") {
+                changeHStatus(HumanStatus::Buying);
+            } else {
+                changeHStatus(HumanStatus::Taking);
+            }
+        }
+    }
+    MLog.write("Human looked");
+}
+
+void Map::take() {
+    MLog.write("Human is taking");
+    std::vector<std::vector<Product>::iterator> toDelete;
+    for (auto i = CurrentHuman->ToBuyList.begin(); i != CurrentHuman->ToBuyList.end(); i++) {
+        std::vector<Product> found;
+        // Ищем все подходящие по типу продукты
+        for (const auto& j: AroundCurrentHumanIter.base()->Content) {
+            if (j.PType == i.base()->PType) {
+                found.push_back(j);
+            }
+        }
+        // Если таких нет, то прост идём дальше
+        if (found.empty()) {
+            MLog.write("Nothing found");
+            continue;
+        }
+        // Ищем наименьшее значение
+        // Т.Е. наилучший для нас вариант
+        ushort bestOne = 1 + found.back().Price - (found.back().Price * found.back().Attractiveness);
+        auto chosen = found.end() - 1;
+        for (auto j = found.begin(); j != found.end(); j++) {
+            if (1 + j->Price - j->Price * j->Attractiveness < bestOne) {
+                bestOne = 1 + j->Price - j->Price * j->Attractiveness;
+                chosen = j;
+            }
+        }
+        toDelete.push_back(i);
+        MLog.write("Adding " + chosen->Type + " to Taking products");
+        CurrentHuman->TakenProducts.push_back(*chosen.base());
+    }
+    for (const auto& i: toDelete) {
+        CurrentHuman->ToBuyList.erase(i);
+        MLog.write("Deleting " + i.base()->Type + " from ToBuyList");
+    }
+    changeHStatus(HumanStatus::Looking);
+    MLog.write("Human took everything");
+}
+
+void Map::buy() {
+    MLog.write("Human is buying");
+    for (const auto& i: CurrentHuman->TakenProducts) {
+        CurrentHuman->Money += i.Price;
+        MLog.write("Deleting " + i.Type + " from TakenProducts");
+    }
+    CurrentHuman->TakenProducts.clear();
+    changeHStatus(HumanStatus::Looking);
+    MLog.write("Human bought");
+}
 
 void Map::updateOutMap() {
 	std::vector<QString> result;
@@ -124,6 +371,7 @@ std::vector<QString> Map::generateMapLegend() {
     // Результат
     std::vector<QString> result;
     // Переносим результат
+    result.reserve(Dict.size());
     for (const auto& i : Dict) {
         result.emplace_back(i.first + QString(" - ") + i.second);
     }
@@ -132,611 +380,107 @@ std::vector<QString> Map::generateMapLegend() {
 }
 
 std::vector<QString> Map::generateStandContent() {
+    MLog.write("Generating stand content");
     std::vector<QString> result;
     if (AroundCurrentHumanIter == std::vector<Object>::iterator()) {
-        result.push_back("None");
+        result.emplace_back("None");
         return result;
     }
-    if (AroundCurrentHumanIter.base()->OType == "Stand") {
+    if (AroundCurrentHumanIter.base()->OType == "Stand" and !AroundCurrentHumanIter->Content.empty()) {
         for (const auto& i : AroundCurrentHumanIter.base()->Content) {
-            result.push_back(QString(std::to_string(i).c_str()));
+            result.emplace_back(std::to_string(i).c_str());
         }
     }
     else {
-        result.push_back("None");
+        result.emplace_back("Empty");
     }
+    MLog.write("Stand content generated");
     return result;
 }
 
 std::vector<QString> Map::generateToBuyList() {
+    MLog.write("Generating ToBuyList");
     std::vector<QString> result;
     if (CurrentHuman == nullptr) {
-        result.push_back("None");
+        result.emplace_back("None");
     }
     else {
+        if (CurrentHuman->ToBuyList.empty()) {
+            result.emplace_back("Empty");
+            return result;
+        }
         for (const auto& i : CurrentHuman->ToBuyList) {
-            result.push_back(QString(std::to_string(i).c_str()));
+            result.emplace_back(std::to_string(i).c_str());
         }
     }
+    MLog.write("ToBuyList generated");
     return result;
 }
 
 std::vector<QString> Map::generateTakenProducts() {
+    MLog.write("Generating TakenProducts");
     std::vector<QString> result;
     if (CurrentHuman == nullptr) {
-        result.push_back("None");
-    }
-    else {
+        result.emplace_back("None");
+    } else if (CurrentHuman->TakenProducts.empty()) {
+        result.emplace_back("Empty");
+    } else {
         for (const auto& i : CurrentHuman->TakenProducts) {
-            result.push_back(QString(std::to_string(i).c_str()));
+            result.emplace_back(std::to_string(i).c_str());
+        }
+    }
+    MLog.write("TakenProducts generated");
+    return result;
+}
+
+std::vector<QString> Map::generateCurrentHumanInfo() {
+    MLog.write("Generating CurrentHumanInfo");
+    std::vector<QString> result;
+    if (CurrentHuman == nullptr) {
+        result.emplace_back("None");
+    } else {
+        result.emplace_back(std::to_string(*CurrentHuman).c_str());
+    }
+    MLog.write("CurrentHumanInfo generated");
+    return result;
+}
+
+std::vector<QString> Map::generateAllHumans() {
+    std::vector<QString> result;
+    if (AllHumans.empty()) {
+        result.emplace_back("Empty");
+    } else {
+        for (const auto& i: AllHumans) {
+            result.emplace_back(std::to_string(i).c_str());
         }
     }
     return result;
 }
-//Map::Map() {
-//    MLog.open("Map.log");
-//    MLog.write("Map Initialized");
-//    CurrentHuman = nullptr;
-//    CurrentStandContent = nullptr;
-//    MStatus = MapStatus::Initialized;
-//}
 
-//bool Map::open(const QString& file) {
-//    clear();
-//    MLog.write("Openinig file " + file);
-//    Parser parser;
-//    if (parser.parse(file)) {
-//        AllObjects = parser.AllObjects;
-//        AllHumans = parser.AllHumans;
-//        MLog.write("File " + file + " parsed");
-//        MStatus = MapStatus::Parsed;
-//        return true;
-//    } else {
-//        MLog.write("Can`t parse file " + file, WriteTypes::Info);
-//        MLog.write("File " + file + " isn`t opened");
-//        return false;
-//    }
-//}
-//
-//void Map::clear() {
-//    MStatus = MapStatus::Initialized;
-//    AllObjects.clear();
-//    AllHumans.clear();
-//    BaseMap.clear();
-//    CurrentMap.clear();
-//    CurrentHuman = nullptr;
-//    CurrentStandContent = nullptr;
-//    MLog.write("Map is cleared");
-//}
-//
-//bool Map::create() {
-//    MLog.write("Creating map");
-//    std::vector<Object>::iterator pos = AllObjects.begin();
-//    if (pos->OType != "EmptySpace") {
-//        MLog.write("First object isn`t EmptySpace", WriteTypes::Info);
-//        MLog.write("Map creating stopped");
-//        return false;
-//    }
-//    ushort x = pos->Position.first, y = pos->Position.second;
-//    ushort X = x + pos->Size.first, Y = y + pos->Size.second;
-//    if (x >= X or y >= Y) {
-//        MLog.write("Position or size bad", WriteTypes::Info);
-//        MLog.write("Map creating stopped");
-//        return false;
-//    }
-//    BaseMap.resize(Y);
-//    for (auto& vect: BaseMap) {
-//        vect.resize(X);
-//    }
-//    ObjectMap.resize(Y);
-//    for (auto& vect: ObjectMap) {
-//        vect.resize(X);
-//    }
-//    while(pos != AllObjects.end()) {
-//        x = pos->Position.first, y = pos->Position.second;
-//        X = x + pos->Size.first, Y = y + pos->Size.second;
-//        std::cout << std::to_string(*pos) << std::endl;
-//        if (x >= X or y >= Y) {
-//            MLog.write("Position or size bad", WriteTypes::Info);
-//            MLog.write("Map creating stopped");
-//            return false;
-//        }
-//        for (ushort i = y; i < Y; i++) {
-//            for (ushort j = x; j < X; j++) {
-//                BaseMap[i][j] = pos->Symbol;
-//                ObjectMap[i][j] = pos.base();
-//            }
-//        }
-//        pos++;
-//    }
-//    MLog.write("Map created");
-//    CurrentMap = BaseMap;
-//    MStatus = MapStatus::Created;
-//    return true;
-//}
-//
-//bool Map::initialize() {
-//    try {
-//        clearHuman();
-//        CurrentHuman = CurrentHumanIndex.base();
-//        CurrentHumanWay = &CurrentHuman->Way;
-//        CurrentHumanWayIndex = CurrentHumanWay->begin();
-//        CurrentHumanToBuyList = &CurrentHuman->ToBuyList;
-//        HStatus = HumanStatus::New;
-//        MLog.write("Human Initialized");
-//        return true;
-//    }
-//    catch (...) {
-//        MLog.write("Can`t initialize Human", WriteTypes::Info);
-//        return false;
-//    }
-//}
-//
-//bool Map::move() {
-//    try {
-//        if (CurrentHumanWayIndex == CurrentHumanWay->end()) {
-//            HStatus == HumanStatus::Walked;
-//            return true;
-//        }
-//        else {
-//            MLog.write("Human moved");
-//            CurrentMap = BaseMap;
-//            CurrentMap[CurrentHumanWayIndex->second][CurrentHumanWayIndex->first] = CurrentHuman->Symbol;
-//            CurrentHumanWayIndex++;
-//            HStatus == HumanStatus::Walked;
-//            return true;
-//        }
-//    }
-//    catch (...) {
-//        MLog.write("Can`t set human position to next", WriteTypes::Info);
-//        return false;
-//    }
-//
-//}
-//
-//bool Map::look() {
-//    // Если вектор пуст, то создаём новый
-//    if (AroundCurrentHuman == nullptr) {
-//        AroundCurrentHuman = new std::vector<Object>{};
-//        std::pair<ushort, ushort> position = *(CurrentHumanWayIndex - 1).base();
-//        if (position.first - 1 > 0) {
-//            AroundCurrentHuman->emplace_back(*ObjectMap[position.second][position.first - 1]);
-//        }
-//        if (position.first + 1 < ObjectMap[0].size()) {
-//            AroundCurrentHuman->emplace_back(*ObjectMap[position.second][position.first + 1]);
-//        }
-//        if (position.second - 1 > 0) {
-//            AroundCurrentHuman->emplace_back(*ObjectMap[position.second - 1][position.first]);
-//        }
-//        if (position.second + 1 < ObjectMap.size()) {
-//            AroundCurrentHuman->emplace_back(*ObjectMap[position.second + 1][position.first]);
-//        }
-//        AroundCurrentHumanIndex = AroundCurrentHuman->begin();
-//    }
-//}
-//
-//bool Map::take() {
-//
-//}
-//
-//bool Map::buy() {
-//    
-//}
-//
-//bool Map::rebuild() {
-//    if (MStatus == MapStatus::Created) {
-//        MLog.write("Current human index set to start");
-//        CurrentHumanIndex = AllHumans.begin();
-//        return initialize();
-//    }
-//    else if (MStatus == MapStatus::Working) {
-//        if (HStatus == HumanStatus::New) {
-//            if (move()) {
-//                return true;
-//            }
-//            else {
-//                MStatus = MapStatus::Error;
-//                MLog.write("Current human isn`t movable. Aborting!", WriteTypes::Error);
-//                return false;
-//            }
-//        }
-//        else if (HStatus == HumanStatus::Walked) {
-//
-//        }
-//        else if (HStatus == HumanStatus::Looking) {
-//
-//        }
-//        else if (HStatus == HumanStatus::Taking) {
-//
-//        }
-//        else if (HStatus == HumanStatus::Buying) {
-//
-//        }
-//        else if (HStatus == HumanStatus::Done) {
-//
-//        }
-//        else {
-//
-//        }
-//    }
-//    else {
-//        MLog.write("Trying to call rebuild while map isn`t created", WriteTypes::Info);
-//        return false;
-//    }
-//}
-//
-//void Map::clearHuman() {
-//    HStatus = HumanStatus::Undefined;
-//    AroundCurrentHuman = nullptr;
-//    AroundCurrentHumanIndex = std::vector<Object>::iterator();
-//    CurrentHumanWay = nullptr;
-//    CurrentHumanWayIndex = std::vector<std::pair<ushort, ushort>>::iterator();
-//    CurrentHuman = nullptr;
-//    CurrentStandContent = nullptr;
-//    CurrentHumanToBuyList = nullptr;
-//}
+void inline Map::changeHStatus(const HumanStatus& status) {
+    HStatus = status;
+    MLog.write("Human status change to " + QString(std::to_string(status).c_str()));
+}
 
-// std::ostream& operator<<(std::ostream& stream, const Map& map) {
-//     stream << "Map: " << map.getFileName() << std::endl;
-//     // Печатаем простую карту
-//     stream << "Base Map: " << std::endl;
-//     for (auto i = map.getBaseMap()->begin(); i != map.getBaseMap()->end(); i++) {
-//         for (auto j = i->begin(); j != i->end(); j++) {
-//             stream << *j;
-//         }
-//         stream << std::endl;
-//     }
-//     // Печатаем текущую карту
-//     stream << std::endl << "Current Map: " << std::endl;
-//         for (auto i = map.getCurrentMap()->begin(); i != map.getCurrentMap()->end(); i++) {
-//             for (auto j = i->begin(); j != i->end(); j++) {
-//                 stream << *j;
-//         }
-//         stream << std::endl;
-//     }
-//     // Выводим объекты
-//     stream << std::endl << "Objects: " << std::endl;
-//     for (auto i = map.getObjects()->begin(); i != map.getObjects()->end(); i++) {
-//         stream << *i;
-//     }
-//     stream << std::endl;
-//     // Выводим людей
-//     stream << std::endl << "Humans " << std::endl; //TODO
-//     for (auto i = map.getHumans()->begin(); i != map.getHumans()->end(); i++) {
-//         stream << *i;
-//     }
-//     return stream;
-// }
-
-// Map::Map(const std::string& filename) {
-//     FileName = filename;
-// };
-
-// void Map::clearMap() {
-//     AllObjects.clear();
-//     Humans.clear();
-//     BaseMap.clear();
-//     CurrentMap.clear();
-//     ObjectMap.clear();
-//     CurrentHuman = Human();
-//     CurrentHumanIndex = std::vector<Human>::const_iterator();
-//     CurrentHumanStatus = HumanStatuses::NotInitialized;
-//     AroundCurrentHuman = std::vector<const Object*>{};
-//     AroundCurrentHumanIndex = AroundCurrentHuman.cbegin();
-//     CurrentWayIndex = std::vector<std::pair<unsigned short, unsigned short>>::const_iterator();
-// }
-
-// MapStatuses Map::create() {
-//     // Создаём BaseMap и ObjectMap
-//     if (AllObjects[0].getOType() != Objects::EmptySpace) {
-//         return MapStatuses::Error;
-//     }
-//     // Создаём размер базовой карты
-//     BaseMap.resize(AllObjects[0].getPosition().second + AllObjects[0].getSize().second);
-//     for (auto& i: BaseMap) {
-//         i.resize(AllObjects[0].getPosition().first + AllObjects[0].getSize().first);
-//     }
-//     // Создаём размер объектной карты
-//     ObjectMap.resize(AllObjects[0].getPosition().second + AllObjects[0].getSize().second);
-//     for (auto& i: ObjectMap) {
-//         i.resize(AllObjects[0].getPosition().first + AllObjects[0].getSize().first);
-//     }
-//     // Заполняем
-//     try {
-//         for (const auto& i: AllObjects) {
-//             char symbol = i.getSymbol();
-//             const Object* obj = &i;
-//             unsigned short x = i.getPosition().first;
-//             unsigned short y = i.getPosition().second;
-//             unsigned short maxX = x + i.getSize().first;
-//             unsigned short maxY = y + i.getSize().second;
-//             if (x > maxX and y > maxY) {
-//                 clearMap();
-//                 return MapStatuses::Error;
-//             }
-//             for (int Y = y; Y < maxY; Y++) {
-//                 for (int X = x; X < maxX; X++) {
-//                     BaseMap[Y][X] = symbol;
-//                     ObjectMap[Y][X] = obj;
-//                 }
-//             }
-//         }
-//     } catch (...) {
-//         clearMap();
-//         return MapStatuses::Error;
-//     }
-//     CurrentMap = BaseMap;
-//     CurrentHumanStatus = HumanStatuses::NotInitialized;
-//     CurrentHumanIndex = Humans.cbegin();
-//     AroundCurrentHumanIndex = AroundCurrentHuman.cbegin();
-//     // Инициализируем человека
-//     if (Humans.empty()) {
-//         return MapStatuses::Done;
-//     }
-//     return MapStatuses::Created;
-// }
-
-// MapStatuses Map::parse() {
-//     auto parser = Parser(FileName);
-//     if (!parser.parse()) {
-//         return MapStatuses::Error;
-//     }
-//     AllObjects = parser.getObjects();
-//     Humans = parser.getHumans();
-//     return MapStatuses::Parsed;
-// }
-
-// const std::vector<std::vector<char>>* Map::getBaseMap() const {
-//     return &BaseMap;
-// }
-
-// const std::vector<std::vector<char>>* Map::getCurrentMap() const {
-//     return &CurrentMap;
-// }
-
-// const std::vector<std::vector<const Object*>>* Map::getObjectMap() const {
-//     return &ObjectMap;
-// }
-
-// std::string Map::getFileName() const {
-//     return FileName;
-// }
-
-// const std::vector<Object>* Map::getObjects() const {
-//     return &AllObjects;
-// }
-
-// const std::vector<Human>* Map::getHumans() const {
-//     return &Humans;
-// }
-
-// const Human* Map::getCurrentHuman() const {
-//     return  (CurrentHumanStatus == HumanStatuses::NotInitialized) ? nullptr: &CurrentHuman;
-// }
-
-// MapStatuses Map::rebuildMap(const MapStatuses& status) {
-//     if (status == MapStatuses::NotInitialized) {
-//         //  Инициализируем
-//         return parse();
-//     } else if (status == MapStatuses::Parsed) {
-//         // Создаём карту
-//         return create();
-//     } else if (status == MapStatuses::Created) {
-//         return MapStatuses::Working;
-//     } else if (status == MapStatuses::Working) {
-//         if (CurrentHumanStatus == HumanStatuses::NotInitialized) {
-//             // Если не инициализирован - пытаемся инициализировать
-//             // Если люди кончились - вырубаем
-//             if (Humans.empty()) {
-//                 return MapStatuses::Done;
-//             } else {
-//                 // Если прошлись уже по всем - готово
-//                 if (CurrentHumanIndex == Humans.cend()) {
-//                     return MapStatuses::Done;
-//                 }
-//                 // Иначе инициализируем
-//                 CurrentHuman = Human(*CurrentHumanIndex);
-//                 CurrentHumanIndex++;
-//                 CurrentWayIndex = CurrentHuman.getWay()->cbegin();
-//                 CurrentHumanStatus = HumanStatuses::Initialized;
-//                 return MapStatuses::Working;
-//             }
-//         } else if (CurrentHumanStatus == HumanStatuses::Initialized) {
-//             // Если человек инициализирован - ходим
-//             CurrentMap = BaseMap;
-//             CurrentMap[CurrentWayIndex->second][CurrentWayIndex->first] = CurrentHuman.getSymbol();
-//             CurrentHumanStatus = HumanStatuses::Walking;
-//             return MapStatuses::Working;
-//         } else if (CurrentHumanStatus == HumanStatuses::Placed) {
-//             // Смещаемся на шаг вперёд
-//             CurrentWayIndex++;
-//             // Если это конец - то путь кончен
-//             if (CurrentWayIndex == CurrentHuman.getWay()->cend()) {
-//                 CurrentHumanStatus = HumanStatuses::WayIsDone;
-//             } else {
-//                 // Иначе Ставим на эту позицию
-//                 CurrentMap = BaseMap;
-//                 CurrentMap[CurrentWayIndex->second][CurrentWayIndex->first] = CurrentHuman.getSymbol();
-//                 CurrentHumanStatus = HumanStatuses::Walking;
-//             }
-//             return MapStatuses::Working;
-//         } else if (CurrentHumanStatus == HumanStatuses::Walking) {
-//             // Добавить проверку на пустой tobuylist
-//             // Смотрим объекты вокруг
-//             Objects otype;
-//             // Проверяем есть ли ещё объекты в TobuyList
-//             // Если их нет - переходим в Bying
-//             // Если есть - переходим в Looking
-//             if (CurrentHuman.getContent()->empty()) {
-//                 otype = Objects::CashBox;
-//                 CurrentHumanStatus = HumanStatuses::Bying;
-//             } else {
-//                 otype = Objects::Stand;
-//             }
-//             std::pair<unsigned short, unsigned short> pos;
-//             if (CurrentWayIndex == CurrentHuman.getWay()->cbegin()) {
-//                 pos = *CurrentWayIndex;
-//             } else {
-//                 pos = *(CurrentWayIndex - 1);
-//             }
-// 			// Проверка tobuylist  и takenproducts  у currenthuman
-//             // Добавляем
-//             if (pos.first - 1 >= 0) {
-//                 AroundCurrentHuman.push_back(ObjectMap[pos.second][pos.first - 1]);
-//             }
-//             if (pos.first + 1 < ObjectMap[CurrentWayIndex->second].size()) {
-//                 AroundCurrentHuman.push_back(ObjectMap[pos.second][pos.first + 1]);
-//             }
-//             if (pos.second - 1 >= 0) {
-//                 AroundCurrentHuman.push_back(ObjectMap[pos.second - 1][pos.first]);
-//             }
-//             if (pos.second + 1 < ObjectMap.size()) {
-//                 AroundCurrentHuman.push_back(ObjectMap[pos.second + 1][pos.first]);
-//             }
-//             std::vector<std::vector<const Object*>::const_iterator> toDelete;
-//             // Проверяем стенды они или нет и если нет - сохраняем итераторы для удаления
-//             for (auto i = AroundCurrentHuman.cbegin(); i != AroundCurrentHuman.cend(); i++) {
-//                 auto obj = *i;
-//                 if (obj->getOType() != otype) {
-//                     toDelete.push_back(i);
-//                 }
-//             }
-//             // Удаляем все НЕ стенды
-//             for (const auto& i: toDelete) {
-//                 AroundCurrentHuman.erase(i);
-//             }
-//             //
-//             if (AroundCurrentHuman.empty()) {
-//             // Если стендов нет - идём дальше
-//             // Иначе осматриваем их
-//                 CurrentHumanStatus = HumanStatuses::Placed;
-//             } else {
-//                 AroundCurrentHumanIndex = AroundCurrentHuman.cbegin();
-//                 if (CurrentHuman.getContent()->empty()) {
-//                     CurrentHumanStatus = HumanStatuses::Bying;
-//                 } else {
-//                     CurrentHumanStatus = HumanStatuses::Looking;
-//                 }
-//             }
-//             return MapStatuses::Working;
-//         } else if (CurrentHumanStatus == HumanStatuses::Looking) {
-// 			// Если список покупок пуст - возвращаемся искать стенды
-// 			if (CurrentHuman.getContent()->empty()) {
-// 				CurrentHumanStatus = HumanStatuses::Walking;
-// 				return MapStatuses::Working;
-// 			}
-// 			// Если Стенды рядом кончились - Двигаемся дальше
-//             if (AroundCurrentHumanIndex == AroundCurrentHuman.cend()) {
-// 				CurrentHumanStatus = HumanStatuses::Placed;
-// 				return MapStatuses::Working;
-// 			}
-// 			auto obj = *AroundCurrentHumanIndex;
-//             // Если случилось какое-то дерьмо
-//             // То это дерьмо случилось
-//             // АУФ
-//             // Программу стоит выключить
-//             if (obj->getOType() != Objects::Stand) {
-//                 clearMap();
-//                 return MapStatuses::Error;
-//             }
-//             // Продукты для удаленния
-//             std::vector<std::vector<Product>::const_iterator> toDelete;
-//             // Проходимся по списку покупок
-// 			for (auto tb = CurrentHuman.getContent()->cbegin(); tb != CurrentHuman.getContent()->cend(); tb++) {
-//                 // Берём все продукты нужного нам типа
-//                 std::vector<const Product*> available;
-//                 for (auto sc = obj->getContent()->cbegin(); sc != obj->getContent()->cend(); sc++) {
-//                     if (sc->getPType() == tb->getPType()) {
-//                         available.push_back(sc.base());
-//                     }
-//                 }
-//                 // Если таких нет - продолжаем
-//                 if (available.empty()) {
-//                     // Если не нашли нужного - идём дальше
-//                     continue;
-//                 }
-//                 // Выделяем из этого списка подходящий нам
-//                 // Коеффициент нужного нам продукта
-//                 short ProductCoeff = tb->getPrice() * tb->getAttractiveness();
-//                 // Выбранный продукт
-//                 std::vector<const Product*>::const_iterator choosen = available.cbegin();
-//                 // Выбираем самый подходящий
-//                 // Самый близкий по модулю к исходному 
-//                 for (auto obj = available.cbegin() + 1; obj != available.cend(); obj++) {
-//                     auto i = *obj.base();
-//                     auto j = *choosen.base();
-//                     short coeff = i->getPrice() * i->getAttractiveness();
-//                     short currCoeff = j->getPrice() * i->getAttractiveness();
-//                     if (fabs(ProductCoeff - coeff) < fabs(ProductCoeff - currCoeff)) {
-//                         choosen = obj;
-//                     }
-//                 }
-//                 CurrentHuman.updateTakenProducts(**choosen);
-//                 toDelete.push_back(tb);
-// 			}
-//             // Нашли всё понравившееся
-//             // Теперь смотрим объекты вокруг и с некоторым шансом берём их
-//             for (const auto& i: toDelete) {
-//                 // Коеффициент. Чем больше - тем больше шанс взять продукт
-//                 // Если у продукта привлекательность меньше, то он даже не будет рассмотрен
-//                 float coeff = 0.5;
-//                 // В левую сторону
-//                 for (auto j = i; j != CurrentHuman.getContent()->cbegin() and coeff < 0.9; j--, coeff += 0.17) {
-//                     if (!(CurrentHuman.inTakenProducts(*j)) and !(CurrentHuman.inToBuyList(*j))) {
-//                         // Смотрим подходит продукт или нет
-//                         if (j->getAttractiveness() < coeff) {
-//                             continue;
-//                         } else {
-//                             if (j->getPrice() * j->getAttractiveness() > int(coeff*100) - rand()%100*(1-coeff)) {
-//                                 CurrentHuman.updateTakenProducts(*j);
-//                             }
-//                         }
-//                     }
-//                 }
-//                 coeff = 0.5;
-//                 // В правую сторону
-//                 for (auto j = i; j != CurrentHuman.getContent()->cend() and coeff < 0.8; j++, coeff += 0.17) {
-//                     if (!(CurrentHuman.inTakenProducts(*j)) and !(CurrentHuman.inToBuyList(*j))) {
-//                         // Смотрим подходит продукт или нет
-//                         if (j->getAttractiveness() < coeff) {
-//                             continue;
-//                         } else {
-//                             if (j->getPrice() * j->getAttractiveness() > int(coeff*100) - rand()%100*(1-coeff)) {
-//                                 CurrentHuman.updateTakenProducts(*j);
-//                             }
-//                         }
-//                     }
-//                 }
-//                 // Удаляем из списка покупок
-//                 CurrentHuman.deleteFromBuyList(i);
-//             }
-//             // Смещаемся на следующий 
-//             AroundCurrentHumanIndex++;
-//             return MapStatuses::Working;
-//         } else if(CurrentHumanStatus == HumanStatuses::Bying) {
-//             // Если Объекты вокруг кончились - двигаемся дальше
-//             if (AroundCurrentHumanIndex == AroundCurrentHuman.cend()) {
-//                 CurrentHumanStatus = HumanStatuses::Placed;
-// 				return MapStatuses::Working;
-//             }
-//             auto cashbox = *AroundCurrentHumanIndex;
-//             if (cashbox->getOType() != Objects::CashBox) {
-//                 clearMap();
-//                 return MapStatuses::Error;
-//             }
-//             std::vector<std::vector<Product>::const_iterator> toDelete;
-//             for (auto i = CurrentHuman.getTakenProducts()->cbegin(); i != CurrentHuman.getTakenProducts()->cend(); i++) {
-//                 short price = i->getPrice();
-//             }
-//             // Доделать
-//             // Смащаемся дальше
-//             AroundCurrentHumanIndex++;
-//         }
-//     } else if (status == MapStatuses::Done) {
-//         return MapStatuses::Done;
-//     } else if (status == MapStatuses::Error) {
-//         return MapStatuses::Error;
-//     } else {
-//         return MapStatuses::Error;
-//     }
-// }
+std::string std::to_string(const HumanStatus& status) {
+    switch (status) {
+        case HumanStatus::None:
+            return "None";
+        case HumanStatus::Initialized:
+            return "Initialized";
+        case HumanStatus::Walked:
+            return "Walked";
+        case HumanStatus::Looking:
+            return "Looking";
+        case HumanStatus::Taking:
+            return "Taking";
+        case HumanStatus::Buying:
+            return "Buying";
+        case HumanStatus::Done:
+            return "Done";
+        case HumanStatus::End:
+            return "End";
+        default:
+            return "Error";
+    }
+}

@@ -72,7 +72,7 @@ public:
     // Цена
     ushort Price;
     // Привлекательность
-    ushort Attractiveness;
+    float Attractiveness;
     // Тип продукта
     QString PType;
     // Название
@@ -115,6 +115,8 @@ public:
     std::vector<Product> ToBuyList;
     // Взятые продукты
     std::vector<Product> TakenProducts;
+    // Потарченые деньги
+    ushort Money;
     // Конструктор
     Human();
 };

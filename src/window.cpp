@@ -70,7 +70,9 @@ void Window::connectUI() {
         this->stopThread();
         QString str = QFileDialog::getOpenFileName(this, "Choose Shop file", "", "*.json");
         this->clearWindow();
-        //this->MapObject = Map(str);
+        WMap.clear();
+        WMap.open(str);
+        WMap.create();
         WLog.write("File changed to " + str);
     };
     connect(LoadShopButton, &QPushButton::clicked, LoadNewFileFunc);
@@ -84,9 +86,9 @@ void Window::connectUI() {
             this->AutoModeButton->setChecked(false);
             WLog.write("Mode status set to auto by force");
         }
-        // rebuild map
-        drawInfoList();
-        drawGraphics();
+        WMap.rebuild();
+        this->drawGraphics();
+        this->drawInfoList();
         WLog.write("Next step button was clicked");
     };
     connect(NextStepButton, &QPushButton::clicked, NextStepFunc);
@@ -107,6 +109,8 @@ void Window::setupUI() {
     MenuBox->addItem("Взятые продукты");
     MenuBox->addItem("Содержание стенда");
     MenuBox->addItem("Легенда карты");
+    MenuBox->addItem("Информация о человеке");
+    MenuBox->addItem("Список всех людей");
     // Кнопка Смены файла
     LoadShopButton = new QPushButton(this);
     LoadShopButton->setGeometry(335, 365, 78, 30);
@@ -161,72 +165,62 @@ void Window::setupBase() {
     Mode = ModeStatuses::Manual;
     Item = ToDrawItem::MapLegend;
     Delay = 2;
-    // MapObject = Map();
     running = true;
     Worker = new std::thread(ThreadFunc, this);
     Worker->detach();
     TStatus = ThreadStatuses::Sleeping;
+    WMap.open("Shop2.json");
+    WMap.create();
     WLog.write("Base set up");
 }
 
 void Window::clearWindow() {
     stopThread();
     resetGraphic();
+    InfoList->clear();
     WLog.write("Window cleared");
 }
 
 void Window::resetGraphic() {
     GraphicView->clear();
-    InfoList->clear();
     WLog.write("Graphics window cleared");
 }
 
 void Window::drawGraphics() {
     resetGraphic();
-    Map test;
-    test.open("Shop.json");
-    test.create();
-    for (const auto& i : test.OutMap) {
+    for (const auto& i : WMap.OutMap) {
         GraphicView->addItem(i);
     }
     WLog.write("Graphics drown");
 }
 
-void Window::drawInfoList() const {
+void Window::drawInfoList() {
     InfoList->clear();
     if (Item == ToDrawItem::MapLegend) {
-        // std::vector<QString> obj = Map.getMapLegend()
-        Map test;
-        test.open("Shop.json");
-        test.create();
-        for (const auto& i : test.generateMapLegend()) {
+        for (const auto& i : WMap.generateMapLegend()) {
             InfoList->addItem(i);
         }
     }
     else if (Item == ToDrawItem::StandContent) {
-        // std::vector<QString> obj = Map.getCurrentStandContent()
-        Map test;
-        test.open("Shop.json");
-        test.create();
-        for (const auto& i : test.generateStandContent()) {
+        for (const auto& i : WMap.generateStandContent()) {
             InfoList->addItem(i);
         }
     }
     else if (Item == ToDrawItem::TakenProducts) {
-        // std::vector<QString> obj = Map.CurrentHuman.TakenProducts
-        Map test;
-        test.open("Shop.json");
-        test.create();
-        for (const auto& i : test.generateTakenProducts()) {
+        for (const auto& i : WMap.generateTakenProducts()) {
             InfoList->addItem(i);
         }
     }
     else if (Item == ToDrawItem::ToBuyList) {
-        // std::vector<QString> obj = Map.CurrentHuman.ToBuyList
-        Map test;
-        test.open("Shop.json");
-        test.create();
-        for (const auto& i : test.generateToBuyList()) {
+        for (const auto& i : WMap.generateToBuyList()) {
+            InfoList->addItem(i);
+        }
+    } else if(Item == ToDrawItem::HumanInfo) {
+        for (const auto& i: WMap.generateCurrentHumanInfo()) {
+            InfoList->addItem(i);
+        }
+    } else if(Item == ToDrawItem::AllHumans) {
+        for (const auto& i: WMap.generateAllHumans()) {
             InfoList->addItem(i);
         }
     }
@@ -266,13 +260,13 @@ void Window::ThreadFunc(Window* object) {
     while (object->running) {
         if (object->TStatus == ThreadStatuses::Running) {
             if (object->currentDelay > object->Delay) {
+                object->WMap.rebuild();
                 object->drawGraphics();
                 object->drawInfoList();
                 object->currentDelay = 0;
             } else {
-                object->currentDelay += 1;
+                object->currentDelay += 2;
             }
-            // rebuildMap
         }
         if (object->TStatus == ThreadStatuses::Stopping) {
             object->TStatus = ThreadStatuses::Sleeping;

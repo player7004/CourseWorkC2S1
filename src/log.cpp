@@ -32,6 +32,9 @@ bool Log::is_open() {
 }
 
 void Log::write(const QString& text, WriteTypes Type) {
+    if (PrefixFlag) {
+        File << Prefix;
+    }
     switch (Type)
     {
     case WriteTypes::Error:

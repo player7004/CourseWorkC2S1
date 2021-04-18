@@ -9,14 +9,12 @@
 
 class Parser {
 private:
-    // Лог
-    Log log;
     // Очищает данные парсера
     void clear();
     // Возвращает продукт
-    bool getProduct(const Json::Value& val, Product& res);
+    static bool getProduct(const Json::Value& val, Product& res);
     // Возвращает объект
-    bool getObject(const Json::Value& val, Object& res);
+    static bool getObject(const Json::Value& val, Object& res);
     // Возвращает человека
     bool getHuman(const Json::Value& val, Human& res);
 public:

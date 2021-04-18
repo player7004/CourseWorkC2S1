@@ -30,6 +30,7 @@ Human::Human() {
     Way = std::vector<std::pair<ushort, ushort>>{};
     ToBuyList = std::vector<Product>{};
     TakenProducts = std::vector<Product>{};
+    Money = 0;
 }
 
 std::string std::to_string(Object val) {
@@ -48,19 +49,11 @@ std::string std::to_string(Object val) {
 
 std::string std::to_string(Human val) {
     string result = "Name: " + val.Name.toStdString() + "\n" +
-    "Type: " + val.Type.toStdString() + "\n" +
     "Symbol: " + char(val.Symbol.unicode()) + "\n" +
-    "To Buy List: \n";
-    for (const auto& i: val.ToBuyList) {
-        result += to_string(i) + "\n";
-    }
-    result += "Taken Products: \n";
-    for (const auto& i: val.TakenProducts) {
-        result += to_string(i) + "\n";
-    }
-    result += "Way: \n";
-    for (auto i: val.Way) {
-        result += "( " + std::to_string(i.first) + "," + std::to_string(i.second) + " )";
+    "Money: " + std::to_string(val.Money) + "\n" +
+    "Way: " + "\n";
+    for (const auto& i: val.Way) {
+        result += "   ( " + std::to_string(i.first) + ", " + std::to_string(i.second) + ")" + "\n";
     }
     return result;
 }
@@ -70,6 +63,6 @@ std::string std::to_string(Product val) {
     "Type: " + val.Type.toStdString() + "\n" + 
     "PType: " + val.PType.toStdString() + "\n" + 
     "Price: " + to_string(val.Price) + "\n" +
-    "Attractiveness: " + to_string(val.Attractiveness) + "\n";
+    "Attractiveness: " + to_string(ushort(val.Attractiveness * 100)) + "\n";
     return result;
 }

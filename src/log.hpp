@@ -26,6 +26,10 @@ private:
     std::ofstream File;
     // Путь к логам
     FS::path Path = FS::current_path();
+    // Префикс для красивого вывода
+    char Prefix = '\t';
+    // Добавлять префикс или нет
+    bool PrefixFlag = false;
 public:
     // Конструктор
     Log();
@@ -37,6 +41,10 @@ public:
     void flush();
     // Открыть файл
     bool open(const QString& file);
+    // Функция, которая меняет значение постановки префикса
+    void inline switchPrefix() {
+        PrefixFlag = !PrefixFlag;
+    };
     // Деструктор
     ~Log();
 };

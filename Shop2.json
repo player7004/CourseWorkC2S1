@@ -40,49 +40,49 @@
           "Type": "Product",
           "Price": 78,
           "PType": "Milk",
-          "Attractiveness": 14
+          "Attractiveness": 0.14
         },
         {
           "Type": "Product",
           "Price": 94,
           "PType": "Milk",
-          "Attractiveness": 80
+          "Attractiveness": 0.8
         },
         {
           "Type": "Product",
           "Price": 60,
           "PType": "Milk",
-          "Attractiveness": 50
+          "Attractiveness": 0.5
         },
         {
           "Type": "Product",
           "Price": 90,
           "PType": "Milk",
-          "Attractiveness": 100
+          "Attractiveness": 1
         },
         {
           "Type": "Product",
           "Price": 54,
           "PType": "Milk",
-          "Attractiveness": 30
+          "Attractiveness": 0.3
         },
         {
           "Type": "Product",
           "Price": 34,
           "PType": "Eggs",
-          "Attractiveness": 90
+          "Attractiveness": 0.9
         },
         {
           "Type": "Product",
           "Price": 45,
           "PType": "Eggs",
-          "Attractiveness": 50
+          "Attractiveness": 0.5
         },
         {
           "Type": "Product",
           "Price": 59,
           "PType": "Eggs",
-          "Attractiveness": 100
+          "Attractiveness": 1
         }
       ]
     },
@@ -96,49 +96,49 @@
           "Type": "Product",
           "Price": 78,
           "PType": "Milk",
-          "Attractiveness": 14
+          "Attractiveness": 0.14
         },
         {
           "Type": "Product",
           "Price": 94,
           "PType": "Milk",
-          "Attractiveness": 80
+          "Attractiveness": 0.8
         },
         {
           "Type": "Product",
           "Price": 60,
           "PType": "Milk",
-          "Attractiveness": 50
+          "Attractiveness": 0.5
         },
         {
           "Type": "Product",
           "Price": 90,
           "PType": "Milk",
-          "Attractiveness": 100
+          "Attractiveness": 1
         },
         {
           "Type": "Product",
           "Price": 54,
           "PType": "Milk",
-          "Attractiveness": 30
+          "Attractiveness": 0.3
         },
         {
           "Type": "Product",
           "Price": 34,
           "PType": "Eggs",
-          "Attractiveness": 90
+          "Attractiveness": 0.9
         },
         {
           "Type": "Product",
           "Price": 45,
           "PType": "Eggs",
-          "Attractiveness": 50
+          "Attractiveness": 0.5
         },
         {
           "Type": "Product",
           "Price": 59,
           "PType": "Eggs",
-          "Attractiveness": 100
+          "Attractiveness": 1
         }
       ]
     },
@@ -152,49 +152,49 @@
           "Type": "Product",
           "Price": 78,
           "PType": "Milk",
-          "Attractiveness": 14
+          "Attractiveness": 0.14
         },
         {
           "Type": "Product",
           "Price": 94,
           "PType": "Milk",
-          "Attractiveness": 80
+          "Attractiveness": 0.8
         },
         {
           "Type": "Product",
           "Price": 60,
           "PType": "Milk",
-          "Attractiveness": 50
+          "Attractiveness": 0.5
         },
         {
           "Type": "Product",
           "Price": 90,
           "PType": "Milk",
-          "Attractiveness": 100
+          "Attractiveness": 1
         },
         {
           "Type": "Product",
           "Price": 54,
           "PType": "Milk",
-          "Attractiveness": 30
+          "Attractiveness": 0.3
         },
         {
           "Type": "Product",
           "Price": 34,
           "PType": "Eggs",
-          "Attractiveness": 90
+          "Attractiveness": 0.9
         },
         {
           "Type": "Product",
           "Price": 45,
           "PType": "Eggs",
-          "Attractiveness": 50
+          "Attractiveness": 0.5
         },
         {
           "Type": "Product",
           "Price": 59,
           "PType": "Eggs",
-          "Attractiveness": 100
+          "Attractiveness": 1
         }
       ]
     },
@@ -208,49 +208,49 @@
           "Type": "Product",
           "Price": 78,
           "PType": "Milk",
-          "Attractiveness": 14
+          "Attractiveness": 0.14
         },
         {
           "Type": "Product",
           "Price": 94,
           "PType": "Milk",
-          "Attractiveness": 80
+          "Attractiveness": 0.8
         },
         {
           "Type": "Product",
           "Price": 60,
           "PType": "Milk",
-          "Attractiveness": 50
+          "Attractiveness": 0.5
         },
         {
           "Type": "Product",
           "Price": 90,
           "PType": "Milk",
-          "Attractiveness": 100
+          "Attractiveness": 1
         },
         {
           "Type": "Product",
           "Price": 54,
           "PType": "Milk",
-          "Attractiveness": 30
+          "Attractiveness": 0.3
         },
         {
           "Type": "Product",
           "Price": 34,
           "PType": "Eggs",
-          "Attractiveness": 90
+          "Attractiveness": 0.9
         },
         {
           "Type": "Product",
           "Price": 45,
           "PType": "Eggs",
-          "Attractiveness": 50
+          "Attractiveness": 0.5
         },
         {
           "Type": "Product",
           "Price": 59,
           "PType": "Eggs",
-          "Attractiveness": 100
+          "Attractiveness": 1
         }
       ]
     },
@@ -274,7 +274,7 @@
       "ToBuyList": [
         {
           "Type": "Product",
-          "Price": 90,
+          "Price": 80,
           "PType": "Milk",
           "Attractiveness": 0.3
         },
@@ -287,6 +287,7 @@
       ],
       "Way": [
         [1, 0],
+        [1, 5],
         [1, 8],
         [6, 8],
         [6, 5],
@@ -297,10 +298,33 @@
       ]
     },
     {
-      "Name": "Igor"
-    },
-    {
-      "Name": "Pasha"
+      "Type": "Human",
+      "Name": "Igor",
+      "ToBuyList": [
+        {
+        "Type": "Product",
+        "Price": 90,
+        "PType": "Milk",
+        "Attractiveness": 0.3
+        },
+        {
+          "Type": "Product",
+          "Price": 64,
+          "PType": "Eggs",
+          "Attractiveness": 0.9
+        }
+      ],
+      "Way": [
+        [1, 0],
+        [1, 5],
+        [1, 8],
+        [6, 8],
+        [6, 5],
+        [6, 3],
+        [3, 3],
+        [2, 3],
+        [2, 0]
+      ]
     }
   ]
 }
