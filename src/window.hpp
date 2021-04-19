@@ -9,6 +9,7 @@
 
 #include <QtCore/QVariant>
 #include <QtWidgets>
+#include <QMessageBox>
 
 #include <thread>
 #include <chrono>
@@ -109,6 +110,26 @@ public:
     std::atomic<bool> running;
     // Карта
     Map WMap;
+
+
+    static int openFileErrorWindow() {
+        QMessageBox box;
+        box.setWindowTitle("Ошибка!");
+        box.setText("Не удаётся корректно отрыть файл или создать карту");
+        box.setInformativeText("Проверьте файл или выберите другой");
+        box.setStandardButtons(QMessageBox::Ok);
+        box.setDefaultButton(QMessageBox::Cancel);
+        return box.exec();
+    }
+
+    static int openSaveInFileWindow() {
+        QMessageBox box;
+        box.setWindowTitle("Важный вопрос!");
+        box.setText("Сохранить результат выполнения в файл?");
+        box.setStandardButtons(QMessageBox::Discard | QMessageBox::Save);
+        box.setDefaultButton(QMessageBox::Save);
+        return box.exec();
+    }
 };
 
 QT_END_NAMESPACE

@@ -312,6 +312,10 @@ std::vector<QString> Map::generateMapLegend() {
     // Результат
     std::vector<QString> result;
     // Переносим результат
+    if (Dict.empty()) {
+        result.emplace_back("None");
+        return result;
+    }
     result.reserve(Dict.size());
     for (const auto& i : Dict) {
         result.emplace_back(i.first + QString(" - ") + i.second);
@@ -414,4 +418,8 @@ std::string std::to_string(const HumanStatus& status) {
         default:
             return "Error";
     }
+}
+
+bool Map::save(const QString &filename) {
+    return Saver::save(filename, AllHumans, AllObjects);
 }

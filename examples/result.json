@@ -2,27 +2,11 @@
 	"Humans" : 
 	[
 		{
-			"Money" : 0,
+			"Money" : 149,
 			"Name" : "Artyom",
 			"Symbol" : "H",
 			"TakenProducts" : [],
-			"ToBuyList" : 
-			[
-				{
-					"Attractiveness" : 0.30000001192092896,
-					"Name" : "Something",
-					"PType" : "Milk",
-					"Price" : 80,
-					"Type" : "Product"
-				},
-				{
-					"Attractiveness" : 0.89999997615814209,
-					"Name" : "Something",
-					"PType" : "Eggs",
-					"Price" : 64,
-					"Type" : "Product"
-				}
-			],
+			"ToBuyList" : [],
 			"Type" : "Human",
 			"Way" : 
 			[

@@ -24,6 +24,15 @@ void Window::connectUI() {
     // Закрывает окно
     auto QuitFunc = [this]{
         stopThread();
+        if (WMap.generateAllHumans()[0] != "Empty" and WMap.generateAllHumans()[0] != "None") {
+            switch(openSaveInFileWindow()) {
+                case QMessageBox::Save:
+                    this->WMap.save(QFileDialog::getOpenFileName(this, "Выберите файл для сохранения", "", "*.json"));
+                    break;
+                case QMessageBox::Discard:
+                    break;
+            }
+        }
         this->close();
     };
     connect(QuitButton, &QPushButton::clicked, QuitFunc);
@@ -51,11 +60,25 @@ void Window::connectUI() {
     // Меняет карту
     auto LoadNewFileFunc = [this] {
         this->stopThread();
+        if (WMap.generateAllHumans()[0] != "Empty" and WMap.generateAllHumans()[0] != "None") {
+            switch(openSaveInFileWindow()) {
+                case QMessageBox::Save:
+                    this->WMap.save(QFileDialog::getOpenFileName(this, "Выберите файл для сохранения", "", "*.json"));
+                    break;
+                case QMessageBox::Discard:
+                    break;
+            }
+        }
         QString str = QFileDialog::getOpenFileName(this, "Choose Shop file", "", "*.json");
         this->clearWindow();
         WMap.clear();
-        WMap.open(str);
-        WMap.create();
+        if (!WMap.open(str) or !WMap.create()) {
+            switch (openFileErrorWindow()) {
+                case QMessageBox::Ok:
+                    return;
+            }
+        }
+        drawInfoList();
     };
     connect(LoadShopButton, &QPushButton::clicked, LoadNewFileFunc);
 
@@ -129,7 +152,7 @@ void Window::setupBase() {
     Worker = new std::thread(ThreadFunc, this);
     Worker->detach();
     TStatus = ThreadStatuses::Sleeping;
-    WMap.open("Shop2.json");
+    WMap.open("examples/EmptyShop.json");
     WMap.create();
 }
 

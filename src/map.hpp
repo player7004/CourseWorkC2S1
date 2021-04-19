@@ -46,7 +46,7 @@ namespace std {
 
 
 // Карта
-class Map: public Saver {
+class Map {
 private:
 
 
@@ -129,4 +129,6 @@ public:
     void rebuild();
     // Меняет статус текущего человека
     void inline changeHStatus(const HumanStatus& status);
+    // Сохраняет в файл
+    bool save(const QString& filename);
 };
