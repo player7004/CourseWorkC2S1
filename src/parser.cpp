@@ -16,8 +16,6 @@ bool Parser::getProduct(const Json::Value& val, Product& res) {
     QString Name{};
     // Привлекательность
     float Attractiveness = 0;
-    // Тип
-    QString Type{};
     // Тип продукта
     QString PType{};
     // Если типа нет, то прекращает

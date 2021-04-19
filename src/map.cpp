@@ -6,12 +6,11 @@ Map::Map() {
     CurrentHuman = nullptr;
     AroundCurrentHuman = {};
     AroundCurrentHumanIter = {};
-    CurrentHumanWayIter = {};
+    CurrentHumanWay = nullptr;
     changeHStatus(HumanStatus::None);
 }
 
-Map::~Map() {
-}
+Map::~Map() = default;
 
 bool Map::open(const QString& file) {
 	clear();
@@ -127,8 +126,8 @@ void Map::initializeHuman() {
         clearHuman();
     } else {
         CurrentHuman = CurrentHumanIter.base();
+        CurrentHumanWay = &CurrentHuman->Way;
         CurrentHumanIter++;
-        CurrentHumanWayIter = CurrentHuman->Way.begin();
         updateOutMap();
         changeHStatus(HumanStatus::Initialized);
     }
@@ -138,7 +137,7 @@ void Map::clearHuman() {
     CurrentHuman = nullptr;
     changeHStatus(HumanStatus::End);
     CurrentHumanIter = {};
-    CurrentHumanWayIter = {};
+    CurrentHumanWay = nullptr;
     AroundCurrentHumanIter = {};
     AroundCurrentHuman = {};
 }
@@ -148,11 +147,12 @@ void Map::resetHuman() {
     changeHStatus(HumanStatus::None);
     AroundCurrentHuman.clear();
     AroundCurrentHumanIter = {};
-    CurrentHumanWayIter = {};
+    // CurrentHumanWayIter = {};
+    CurrentHumanWay = nullptr;
 }
 
 void Map::move() {
-    if (CurrentHumanWayIter == CurrentHuman->Way.end()) {
+    if (CurrentHumanWay->empty()) {
         if (CurrentHuman->TakenProducts.empty() and CurrentHuman->ToBuyList.empty()) {
             changeHStatus(HumanStatus::Done);
         } else {
@@ -161,24 +161,23 @@ void Map::move() {
     }
     if (HStatus == HumanStatus::Initialized) {
         placeHuman();
-        CurrentHumanWayIter++;
+        CurrentHumanWayLastPos = *CurrentHumanWay->begin();
+        CurrentHumanWay->erase(CurrentHumanWay->begin());
         changeHStatus(HumanStatus::Walked);
         return;
     }
     if (HStatus == HumanStatus::Walked) {
-        if (CurrentHuman->ToBuyList.empty() and CurrentHuman->TakenProducts.empty()) {
-            placeHuman();
-            CurrentHumanWayIter++;
-        } else {
-            placeHuman();
-            CurrentHumanWayIter++;
+        placeHuman();
+        CurrentHumanWayLastPos = *CurrentHumanWay->begin();
+        CurrentHumanWay->erase(CurrentHumanWay->begin());
+        if (!(CurrentHuman->ToBuyList.empty() and CurrentHuman->TakenProducts.empty())) {
             changeHStatus(HumanStatus::Looking);
         }
     }
 }
 
 void Map::placeHuman() {
-    auto pos = CurrentHumanWayIter.base();
+    auto pos = CurrentHumanWay->begin().base();
     updateOutMap();
     OutMap[pos->first][pos->second] = CurrentHuman->Symbol;
 }
@@ -191,29 +190,29 @@ void Map::look() {
         } else {
             Type = "Stand";
         }
-        auto pos = (CurrentHumanWayIter - 1).base();
+//        auto pos = (CurrentHumanWayIter - 1).base();
         // Слева
-        if (pos->first - 1 >= 0) {
-            if (ObjectMap[pos->first -1][pos->second]->Type == Type) {
-                AroundCurrentHuman.push_back(*ObjectMap[pos->first - 1][pos->second]);
+        if (CurrentHumanWayLastPos.first - 1 >= 0) {
+            if (ObjectMap[CurrentHumanWayLastPos.first -1][CurrentHumanWayLastPos.second]->Type == Type) {
+                AroundCurrentHuman.push_back(*ObjectMap[CurrentHumanWayLastPos.first - 1][CurrentHumanWayLastPos.second]);
             }
         }
         // Справа
-        if (pos->first + 1 < ObjectMap.size()) {
-            if (ObjectMap[pos->first + 1][pos->second]->Type == Type) {
-                AroundCurrentHuman.push_back(*ObjectMap[pos->first + 1][pos->second]);
+        if (CurrentHumanWayLastPos.first + 1 < ObjectMap.size()) {
+            if (ObjectMap[CurrentHumanWayLastPos.first + 1][CurrentHumanWayLastPos.second]->Type == Type) {
+                AroundCurrentHuman.push_back(*ObjectMap[CurrentHumanWayLastPos.first + 1][CurrentHumanWayLastPos.second]);
             }
         }
         // Сверху
-        if (pos->second - 1 >= 0) {
-            if (ObjectMap[pos->first][pos->second - 1]->OType == Type) {
-                AroundCurrentHuman.push_back(*ObjectMap[pos->first][pos->second - 1]);
+        if (CurrentHumanWayLastPos.second - 1 >= 0) {
+            if (ObjectMap[CurrentHumanWayLastPos.first][CurrentHumanWayLastPos.second - 1]->OType == Type) {
+                AroundCurrentHuman.push_back(*ObjectMap[CurrentHumanWayLastPos.first][CurrentHumanWayLastPos.second - 1]);
             }
         }
         // Снизу
-        if (pos->first + 1 < ObjectMap.back().size()) {
-            if (ObjectMap[pos->first][pos->second + 1]->Type == Type) {
-                AroundCurrentHuman.push_back(*ObjectMap[pos->first][pos->second + 1]);
+        if (CurrentHumanWayLastPos.first + 1 < ObjectMap.back().size()) {
+            if (ObjectMap[CurrentHumanWayLastPos.first][CurrentHumanWayLastPos.second + 1]->Type == Type) {
+                AroundCurrentHuman.push_back(*ObjectMap[CurrentHumanWayLastPos.first][CurrentHumanWayLastPos.second + 1]);
             }
         }
         if (AroundCurrentHuman.empty()) {
@@ -395,29 +394,6 @@ std::vector<QString> Map::generateAllHumans() {
 
 void inline Map::changeHStatus(const HumanStatus& status) {
     HStatus = status;
-}
-
-std::string std::to_string(const HumanStatus& status) {
-    switch (status) {
-        case HumanStatus::None:
-            return "None";
-        case HumanStatus::Initialized:
-            return "Initialized";
-        case HumanStatus::Walked:
-            return "Walked";
-        case HumanStatus::Looking:
-            return "Looking";
-        case HumanStatus::Taking:
-            return "Taking";
-        case HumanStatus::Buying:
-            return "Buying";
-        case HumanStatus::Done:
-            return "Done";
-        case HumanStatus::End:
-            return "End";
-        default:
-            return "Error";
-    }
 }
 
 bool Map::save(const QString &filename) {

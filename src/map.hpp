@@ -40,11 +40,6 @@ enum class HumanStatus {
     Error
 };
 
-namespace std {
-    string to_string(const HumanStatus& status);
-}
-
-
 // Карта
 class Map {
 private:
@@ -63,8 +58,10 @@ private:
     std::vector<Human>::iterator CurrentHumanIter;
     // Указатель на текущего человека
     Human* CurrentHuman;
-    // Указатель на местоположение текущего человека
-    std::vector<std::pair<ushort, ushort>>::iterator CurrentHumanWayIter;
+    // Путь текущего человека
+    std::vector<std::pair<ushort, ushort>>* CurrentHumanWay;
+    // Последняя позиция текущего человека
+    std::pair<ushort, ushort> CurrentHumanWayLastPos;
     // То, что находится вокруг человека
     std::vector<Object> AroundCurrentHuman;
     // Итератор по AroundCurrentHuman

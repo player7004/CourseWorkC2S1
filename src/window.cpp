@@ -225,3 +225,22 @@ void Window::stopThread() {
 void Window::startThread() {
     TStatus = ThreadStatuses::Running;
 }
+
+int Window::openSaveInFileWindow() {
+    QMessageBox box;
+    box.setWindowTitle("Важный вопрос!");
+    box.setText("Сохранить результат выполнения в файл?");
+    box.setStandardButtons(QMessageBox::Discard | QMessageBox::Save);
+    box.setDefaultButton(QMessageBox::Save);
+    return box.exec();
+}
+
+int Window::openFileErrorWindow() {
+    QMessageBox box;
+    box.setWindowTitle("Ошибка!");
+    box.setText("Не удаётся корректно отрыть файл или создать карту");
+    box.setInformativeText("Проверьте файл или выберите другой");
+    box.setStandardButtons(QMessageBox::Ok);
+    box.setDefaultButton(QMessageBox::Cancel);
+    return box.exec();
+}
