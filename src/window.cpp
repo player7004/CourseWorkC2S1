@@ -79,6 +79,7 @@ void Window::connectUI() {
             }
         }
         drawInfoList();
+        drawGraphics();
     };
     connect(LoadShopButton, &QPushButton::clicked, LoadNewFileFunc);
 
@@ -111,6 +112,7 @@ void Window::setupUI() {
     MenuBox->addItem("Взятые продукты");
     MenuBox->addItem("Содержание стенда");
     MenuBox->addItem("Список всех людей");
+    MenuBox->addItem("Все взятые продукты");
     // Кнопка Смены файла
     LoadShopButton = new QPushButton(this);
     LoadShopButton->setGeometry(335, 365, 78, 30);
@@ -196,6 +198,10 @@ void Window::drawInfoList() {
         }
     } else if(Item == ToDrawItem::AllHumans) {
         for (const auto& i: WMap.generateAllHumans()) {
+            InfoList->addItem(i);
+        }
+    } else if (Item == ToDrawItem::AllTakenProducts) {
+        for (const auto& i: WMap.generateAllTakenProducts()) {
             InfoList->addItem(i);
         }
     }

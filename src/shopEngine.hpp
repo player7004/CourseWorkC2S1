@@ -2,6 +2,9 @@
 #include "parser.hpp"
 #include <QString>
 #include <cmath>
+#include <random>
+#include <ctime>
+#include <map>
 
 enum class MapStatus {
     // Карта была инициализирована
@@ -41,9 +44,14 @@ enum class HumanStatus {
 };
 
 // Карта
-class Map {
+class ShopEngine {
 private:
-
+    // Здесь лежат все имеющиеся объекты
+    std::vector<Object> AllObjects;
+    // Здесь лежат все имеющиеся люди
+    std::vector<Human> AllHumans;
+    // Здесь лежат все взятые продукты
+    std::map<QString, std::vector<Product>> AllTakenProducts;
 
     // То что связано с картой в смысле её графического представления
     // Базовая карта
@@ -89,19 +97,14 @@ private:
     // Статус карты
     MapStatus Status;
 public:
-    // Здесь лежат все имеющиеся объекты
-    std::vector<Object> AllObjects;
-    // Здесь лежат все имеющиеся люди
-    std::vector<Human> AllHumans;
-
     // Карта на выход
     std::vector<QString> OutMap;
 
     // Базовые функции
     // Конструктор
-    Map();
+    ShopEngine();
     // Деструктор
-    ~Map();
+    ~ShopEngine();
 
     // Функции контроля карты
     // Отрывает файл
@@ -122,10 +125,14 @@ public:
     std::vector<QString> generateCurrentHumanInfo();
     // Создаёт информацию о всех людях
     std::vector<QString> generateAllHumans();
+    // Создаёт информацию и всех взятых продуктах
+    std::vector<QString> generateAllTakenProducts();
     // Перестраивает карту
     void rebuild();
     // Меняет статус текущего человека
     void inline changeHStatus(const HumanStatus& status);
     // Сохраняет в файл
     bool save(const QString& filename);
+    // Создаёт случайное число
+    ushort static randUshort(const ushort& a, const ushort& b);
 };

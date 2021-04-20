@@ -66,3 +66,19 @@ std::string std::to_string(Product val) {
     "Attractiveness: " + to_string(ushort(val.Attractiveness * 100)) + "\n";
     return result;
 }
+
+bool operator==(const Product& first, const Product& second) {
+    return (first.Type == second.Type and
+    ushort(first.Attractiveness * 100) == ushort(second.Attractiveness * 100) and
+    first.Name == second.Name and
+    first.Price == second.Price and
+    first.PType == second.PType);
+}
+
+bool operator==(Product& first, Product& second) {
+    return (first.Type == second.Type and
+            ushort(first.Attractiveness * 100) == ushort(second.Attractiveness * 100) and
+           first.Name == second.Name and
+           first.Price == second.Price and
+           first.PType == second.PType);
+}

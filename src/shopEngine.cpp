@@ -1,18 +1,19 @@
-#include "map.hpp"
+#include "shopEngine.hpp"
 
-Map::Map() {
+ShopEngine::ShopEngine() {
 	Status = MapStatus::Initialized;
     CurrentHumanIter = {};
     CurrentHuman = nullptr;
     AroundCurrentHuman = {};
     AroundCurrentHumanIter = {};
     CurrentHumanWay = nullptr;
+    AllTakenProducts = {};
     changeHStatus(HumanStatus::None);
 }
 
-Map::~Map() = default;
+ShopEngine::~ShopEngine() = default;
 
-bool Map::open(const QString& file) {
+bool ShopEngine::open(const QString& file) {
 	clear();
 	Parser obj;
 	if (obj.parse(file)) {
@@ -27,7 +28,7 @@ bool Map::open(const QString& file) {
 	}
 }
 
-bool Map::create() {
+bool ShopEngine::create() {
     if (Status != MapStatus::Opened) {
         return false;
     }
@@ -73,14 +74,15 @@ bool Map::create() {
     return true;
 }
 
-void Map::clear() {
+void ShopEngine::clear() {
 	Status = MapStatus::Initialized;
 	AllObjects.clear();
 	AllHumans.clear();
+	AllTakenProducts.clear();
 	clearHuman();
 }
 
-void Map::rebuild() {
+void ShopEngine::rebuild() {
     if (Status == MapStatus::Initialized) {
         return;
     }
@@ -115,7 +117,7 @@ void Map::rebuild() {
     }
 }
 
-void Map::initializeHuman() {
+void ShopEngine::initializeHuman() {
     if (CurrentHumanIter == std::vector<Human>::iterator()) {
         Status = MapStatus::Error;
         return;
@@ -126,6 +128,7 @@ void Map::initializeHuman() {
         clearHuman();
     } else {
         CurrentHuman = CurrentHumanIter.base();
+        AllTakenProducts.insert({CurrentHuman->Name, {}});
         CurrentHumanWay = &CurrentHuman->Way;
         CurrentHumanIter++;
         updateOutMap();
@@ -133,7 +136,7 @@ void Map::initializeHuman() {
     }
 }
 
-void Map::clearHuman() {
+void ShopEngine::clearHuman() {
     CurrentHuman = nullptr;
     changeHStatus(HumanStatus::End);
     CurrentHumanIter = {};
@@ -142,7 +145,7 @@ void Map::clearHuman() {
     AroundCurrentHuman = {};
 }
 
-void Map::resetHuman() {
+void ShopEngine::resetHuman() {
     CurrentHuman = nullptr;
     changeHStatus(HumanStatus::None);
     AroundCurrentHuman.clear();
@@ -151,7 +154,7 @@ void Map::resetHuman() {
     CurrentHumanWay = nullptr;
 }
 
-void Map::move() {
+void ShopEngine::move() {
     if (CurrentHumanWay->empty()) {
         if (CurrentHuman->TakenProducts.empty() and CurrentHuman->ToBuyList.empty()) {
             changeHStatus(HumanStatus::Done);
@@ -176,13 +179,13 @@ void Map::move() {
     }
 }
 
-void Map::placeHuman() {
+void ShopEngine::placeHuman() {
     auto pos = CurrentHumanWay->begin().base();
     updateOutMap();
     OutMap[pos->first][pos->second] = CurrentHuman->Symbol;
 }
 
-void Map::look() {
+void ShopEngine::look() {
     if (AroundCurrentHuman.empty() and AroundCurrentHumanIter == std::vector<Object>::iterator()) {
         QString Type;
         if (CurrentHuman->ToBuyList.empty()) {
@@ -190,7 +193,6 @@ void Map::look() {
         } else {
             Type = "Stand";
         }
-//        auto pos = (CurrentHumanWayIter - 1).base();
         // Слева
         if (CurrentHumanWayLastPos.first - 1 >= 0) {
             if (ObjectMap[CurrentHumanWayLastPos.first -1][CurrentHumanWayLastPos.second]->Type == Type) {
@@ -241,7 +243,7 @@ void Map::look() {
     }
 }
 
-void Map::take() {
+void ShopEngine::take() {
     std::vector<std::vector<Product>::iterator> toDelete;
     for (auto i = CurrentHuman->ToBuyList.begin(); i != CurrentHuman->ToBuyList.end(); i++) {
         std::vector<Product> found;
@@ -257,16 +259,48 @@ void Map::take() {
         }
         // Ищем наименьшее значение
         // Т.Е. наилучший для нас вариант
-        ushort bestOne = 1 + found.back().Price - (found.back().Price * found.back().Attractiveness);
+        float bestOne = 1.0f + found.back().Price - (found.back().Price * found.back().Attractiveness);
         auto chosen = found.end() - 1;
         for (auto j = found.begin(); j != found.end(); j++) {
-            if (1 + j->Price - j->Price * j->Attractiveness < bestOne) {
-                bestOne = 1 + j->Price - j->Price * j->Attractiveness;
+            if (1.0f + float(j->Price) - float(j->Price) * j->Attractiveness < bestOne) {
+                bestOne = 1.0f + float(j->Price) - float(j->Price) * j->Attractiveness;
                 chosen = j;
             }
         }
+        // Теперь смотрим дополнительные продукты
+        std::vector<std::vector<Product>::iterator> allProducts;
+        allProducts.push_back(std::find(AroundCurrentHumanIter->Content.begin(), AroundCurrentHumanIter->Content.end(), *chosen.base()));
+        auto attr = chosen->Attractiveness;
+        for (auto iter = std::find(AroundCurrentHumanIter->Content.begin(), AroundCurrentHumanIter->Content.end(), *chosen.base());
+        iter != AroundCurrentHumanIter->Content.begin() and attr > 0;
+        iter--, attr -= 0.21) {
+            if (std::find(allProducts.begin(), allProducts.end(), iter) != allProducts.end()  or
+            std::find(CurrentHuman->TakenProducts.begin(), CurrentHuman->TakenProducts.end(), *iter) != CurrentHuman->TakenProducts.end()) {
+                continue;
+            }
+            if (ushort(randUshort(0, 100) * (1 + chosen->Attractiveness - iter->Attractiveness)) < ushort(attr * 100)) {
+                allProducts.push_back(iter);
+                std::cout << "to begin: " << std::endl << std::to_string(*iter.base()) << std::endl;
+            }
+        }
+        attr = chosen->Attractiveness;
+        for (auto iter = std::find(AroundCurrentHumanIter->Content.begin(),AroundCurrentHumanIter->Content.end(), *chosen.base());
+                                   iter != AroundCurrentHumanIter->Content.end() and attr > 0;
+                                   iter++, attr -= 0.21) {
+            if (std::find(allProducts.begin(), allProducts.end(), iter) != allProducts.end()  or
+                std::find(CurrentHuman->TakenProducts.begin(), CurrentHuman->TakenProducts.end(), *iter) != CurrentHuman->TakenProducts.end()) {
+                continue;
+            }
+            if (ushort(randUshort(0, 100) * (1 + chosen->Attractiveness - iter->Attractiveness)) < ushort(attr * 100)) {
+                allProducts.push_back(iter);
+                std::cout << "to end: " << std::endl << std::to_string(*iter.base()) << std::endl;
+            }
+        }
         toDelete.push_back(i);
-        CurrentHuman->TakenProducts.push_back(*chosen.base());
+        for (const auto& p : allProducts) {
+            CurrentHuman->TakenProducts.push_back(*p.base());
+            AllTakenProducts[CurrentHuman->Name].push_back(*p.base());
+        }
     }
     for (const auto& i: toDelete) {
         CurrentHuman->ToBuyList.erase(i);
@@ -274,7 +308,7 @@ void Map::take() {
     changeHStatus(HumanStatus::Looking);
 }
 
-void Map::buy() {
+void ShopEngine::buy() {
     for (const auto& i: CurrentHuman->TakenProducts) {
         CurrentHuman->Money += i.Price;
     }
@@ -282,7 +316,7 @@ void Map::buy() {
     changeHStatus(HumanStatus::Looking);
 }
 
-void Map::updateOutMap() {
+void ShopEngine::updateOutMap() {
 	std::vector<QString> result;
 	for (const auto& i : BaseMap) {
 		QString str;
@@ -294,7 +328,7 @@ void Map::updateOutMap() {
 	OutMap = result;
 }
 
-std::vector<QString> Map::generateMapLegend() {
+std::vector<QString> ShopEngine::generateMapLegend() {
     std::map<QChar, QString> Dict;
     // Вносим Объекты
     for (const auto& i : AllObjects) {
@@ -322,7 +356,7 @@ std::vector<QString> Map::generateMapLegend() {
     return result;
 }
 
-std::vector<QString> Map::generateStandContent() {
+std::vector<QString> ShopEngine::generateStandContent() {
     std::vector<QString> result;
     if (AroundCurrentHumanIter == std::vector<Object>::iterator()) {
         result.emplace_back("None");
@@ -339,7 +373,7 @@ std::vector<QString> Map::generateStandContent() {
     return result;
 }
 
-std::vector<QString> Map::generateToBuyList() {
+std::vector<QString> ShopEngine::generateToBuyList() {
     std::vector<QString> result;
     if (CurrentHuman == nullptr) {
         result.emplace_back("None");
@@ -356,7 +390,7 @@ std::vector<QString> Map::generateToBuyList() {
     return result;
 }
 
-std::vector<QString> Map::generateTakenProducts() {
+std::vector<QString> ShopEngine::generateTakenProducts() {
     std::vector<QString> result;
     if (CurrentHuman == nullptr) {
         result.emplace_back("None");
@@ -370,7 +404,7 @@ std::vector<QString> Map::generateTakenProducts() {
     return result;
 }
 
-std::vector<QString> Map::generateCurrentHumanInfo() {
+std::vector<QString> ShopEngine::generateCurrentHumanInfo() {
     std::vector<QString> result;
     if (CurrentHuman == nullptr) {
         result.emplace_back("None");
@@ -380,7 +414,7 @@ std::vector<QString> Map::generateCurrentHumanInfo() {
     return result;
 }
 
-std::vector<QString> Map::generateAllHumans() {
+std::vector<QString> ShopEngine::generateAllHumans() {
     std::vector<QString> result;
     if (AllHumans.empty()) {
         result.emplace_back("Empty");
@@ -392,10 +426,35 @@ std::vector<QString> Map::generateAllHumans() {
     return result;
 }
 
-void inline Map::changeHStatus(const HumanStatus& status) {
+void inline ShopEngine::changeHStatus(const HumanStatus& status) {
     HStatus = status;
 }
 
-bool Map::save(const QString &filename) {
+bool ShopEngine::save(const QString &filename) {
     return Saver::save(filename, AllHumans, AllObjects);
+}
+
+ushort ShopEngine::randUshort(const ushort &a, const ushort &b) {
+    std::mt19937_64 gen(time(NULL));
+    std::uniform_int_distribution<ushort> range(a, b + 1);
+    return range(gen);
+}
+
+std::vector<QString> ShopEngine::generateAllTakenProducts() {
+    std::vector<QString> result;
+    if (AllHumans.empty()) {
+        result.emplace_back("None");
+        return result;
+    }
+    if (AllTakenProducts.empty()) {
+        result.emplace_back("Empty");
+        return result;
+    }
+    for (const auto &i : AllTakenProducts) {
+        result.push_back(i.first);
+        for (const auto& j: i.second) {
+            result.emplace_back(std::to_string(j).c_str());
+        }
+    }
+    return result;
 }

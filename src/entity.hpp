@@ -78,6 +78,9 @@ public:
     QString Name;
     // Конструктор
     Product();
+    // Операторы тождественного равенства
+    friend bool operator==(const Product& first, const Product& second);
+    friend bool operator==(Product& first, Product& second);
 };
 
 class Object {

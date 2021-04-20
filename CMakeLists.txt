@@ -19,10 +19,10 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 
 set(Qt5_DIR "C:/Qt/5.15.2/mingw81_64/lib/cmake/Qt5")
 set(CMAKE_PREFIX_PATH "C:/Boost/lib/cmake")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -O2")
 
 find_package(Threads REQUIRED)
 find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
-find_package(Boost REQUIRED COMPONENTS filesystem)
 
 add_executable(CourseWork
             main.cpp
@@ -30,8 +30,8 @@ add_executable(CourseWork
             src/entity.cpp
             src/window.hpp                
             src/window.cpp
-            src/map.cpp
-            src/map.hpp
+        src/shopEngine.cpp
+        src/shopEngine.hpp
             src/parser.cpp
             src/parser.hpp
             src/dist/jsoncpp.cpp
@@ -39,4 +39,4 @@ add_executable(CourseWork
             src/dist/json/json-forwards.h
 )
 
-target_link_libraries(CourseWork PRIVATE Qt5::Widgets Qt5::Core Threads::Threads Boost::filesystem)
+target_link_libraries(CourseWork PRIVATE Qt5::Widgets Qt5::Core Threads::Threads)

@@ -14,7 +14,7 @@
 #include <thread>
 #include <chrono>
 #include <atomic>
-#include "map.hpp"
+#include "shopEngine.hpp"
 
 enum class ModeStatuses {
     // Ручной режим
@@ -35,7 +35,9 @@ enum class ToDrawItem {
     // Содержание стенды
     StandContent,
     // Все имеющиеся люди
-    AllHumans
+    AllHumans,
+    // Все взятые продукты
+    AllTakenProducts
 };
 
 enum class ThreadStatuses {
@@ -109,7 +111,7 @@ public:
     // Индикатор работы потока
     std::atomic<bool> running;
     // Карта
-    Map WMap;
+    ShopEngine WMap;
 
     // Открыает окно ошибки загрузки карты
     static int openFileErrorWindow();
