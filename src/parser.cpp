@@ -302,7 +302,7 @@ bool Parser::parse(const QString& file) {
     Json::Value JFile;
     File >> JFile;
     File.close();
-    Json::Value Humans = JFile["Humans"], Objects = JFile["Objects"];
+    Json::Value Humans = JFile["Humans"], Objects = JFile["Objects"], TakenProducts = JFile["TakenProducts"];
     if (!Objects) {
         return false;
     }
@@ -324,6 +324,32 @@ bool Parser::parse(const QString& file) {
             } else {
                 continue;
             }
+        }
+    }
+    // Взятые продукты
+    if (TakenProducts) {
+        for (const auto& i: TakenProducts) {
+            QString name;
+            std::vector<Product> taken;
+            if (i["Name"]) {
+                try {
+                    name = i["Name"].asCString();
+                } catch (...) {
+                    continue;
+                }
+            }
+            if (i["Products"]) {
+                try {
+                    for (const auto& j: i["Products"]) {
+                        Product res;
+                        if (getProduct(j, res)) {
+                            taken.push_back(res);
+                        }
+                    }
+                } catch(...) {
+                }
+            }
+            AllTakenProducts.insert({name, taken});
         }
     }
     return true;
@@ -407,7 +433,7 @@ void Saver::saveHuman(Json::Value& val, const Human &res) {
     val.append(result);
 }
 
-bool Saver::save(const QString &filename, const std::vector<Human>& AllHumans, const std::vector<Object>& AllObjects) {
+bool Saver::save(const QString &filename, const std::vector<Human>& AllHumans, const std::vector<Object>& AllObjects, const std::map<QString, std::vector<Product>>& TakenProducts) {
     std::ofstream file(filename.toStdString());
     if (!file.is_open()) {
         return false;
@@ -426,7 +452,21 @@ bool Saver::save(const QString &filename, const std::vector<Human>& AllHumans, c
     }
     result["Objects"] = objects;
     result["Humans"] = humans;
-
+    if (!TakenProducts.empty()) {
+        // Сюда сохраним Все взятые продукты
+        Json::Value takenProducts(Json::arrayValue);
+        for (const auto& i: TakenProducts) {
+            Json::Value sit;
+            sit["Name"] = i.first.toStdString();
+            Json::Value products(Json::arrayValue);
+            for (const auto& j: i.second) {
+                saveProduct(products, j);
+            }
+            sit["Products"] = products;
+            takenProducts.append(sit);
+        }
+        result["TakenProducts"] = takenProducts;
+    }
     file << result << std::endl;
     file.flush();
     file.close();

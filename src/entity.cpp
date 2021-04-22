@@ -50,11 +50,11 @@ std::string std::to_string(Object val) {
 std::string std::to_string(Human val) {
     string result = "Name: " + val.Name.toStdString() + "\n" +
     "Symbol: " + char(val.Symbol.unicode()) + "\n" +
-    "Money: " + std::to_string(val.Money) + "\n" +
-    "Way: " + "\n";
-    for (const auto& i: val.Way) {
-        result += "   ( " + std::to_string(i.first) + ", " + std::to_string(i.second) + ")" + "\n";
-    }
+    "Money: " + std::to_string(val.Money) + "\n";
+//    "Way: " + "\n";
+//    for (const auto& i: val.Way) {
+//        result += "   ( " + std::to_string(i.first) + ", " + std::to_string(i.second) + ")" + "\n";
+//    }
     return result;
 }
 

@@ -19,6 +19,7 @@ bool ShopEngine::open(const QString& file) {
 	if (obj.parse(file)) {
 		AllObjects = obj.AllObjects;
 		AllHumans = obj.AllHumans;
+		AllTakenProducts = obj.AllTakenProducts;
 		Status = MapStatus::Opened;
 		return true;
 	}
@@ -79,6 +80,7 @@ void ShopEngine::clear() {
 	AllObjects.clear();
 	AllHumans.clear();
 	AllTakenProducts.clear();
+	OutMap.clear();
 	clearHuman();
 }
 
@@ -280,7 +282,6 @@ void ShopEngine::take() {
             }
             if (ushort(randUshort(0, 100) * (1 + chosen->Attractiveness - iter->Attractiveness)) < ushort(attr * 100)) {
                 allProducts.push_back(iter);
-                std::cout << "to begin: " << std::endl << std::to_string(*iter.base()) << std::endl;
             }
         }
         attr = chosen->Attractiveness;
@@ -293,7 +294,6 @@ void ShopEngine::take() {
             }
             if (ushort(randUshort(0, 100) * (1 + chosen->Attractiveness - iter->Attractiveness)) < ushort(attr * 100)) {
                 allProducts.push_back(iter);
-                std::cout << "to end: " << std::endl << std::to_string(*iter.base()) << std::endl;
             }
         }
         toDelete.push_back(i);
@@ -431,7 +431,7 @@ void inline ShopEngine::changeHStatus(const HumanStatus& status) {
 }
 
 bool ShopEngine::save(const QString &filename) {
-    return Saver::save(filename, AllHumans, AllObjects);
+    return Saver::save(filename, AllHumans, AllObjects, AllTakenProducts);
 }
 
 ushort ShopEngine::randUshort(const ushort &a, const ushort &b) {
@@ -452,6 +452,9 @@ std::vector<QString> ShopEngine::generateAllTakenProducts() {
     }
     for (const auto &i : AllTakenProducts) {
         result.push_back(i.first);
+        if (i.second.empty()) {
+            result.emplace_back("Empty");
+        }
         for (const auto& j: i.second) {
             result.emplace_back(std::to_string(j).c_str());
         }

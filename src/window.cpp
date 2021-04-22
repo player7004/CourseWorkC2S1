@@ -10,6 +10,7 @@ Window::Window() {
         setupBase();
         connectUI();
         drawInfoList();
+        drawGraphics();
     } catch (...) {
         this->close();
     }
@@ -62,9 +63,14 @@ void Window::connectUI() {
         this->stopThread();
         if (WMap.generateAllHumans()[0] != "Empty" and WMap.generateAllHumans()[0] != "None") {
             switch(openSaveInFileWindow()) {
-                case QMessageBox::Save:
-                    this->WMap.save(QFileDialog::getOpenFileName(this, "Выберите файл для сохранения", "", "*.json"));
+                case QMessageBox::Save: {
+                    QString str = QFileDialog::getOpenFileName(this, "Выберите файл для сохранения", "", "*.json");
+                    if (str.isEmpty()) {
+                        break;
+                    }
+                    this->WMap.save(str);
                     break;
+                    }
                 case QMessageBox::Discard:
                     break;
             }
