@@ -433,7 +433,7 @@ void Saver::saveHuman(Json::Value& val, const Human &res) {
     val.append(result);
 }
 
-bool Saver::save(const QString &filename, const std::vector<Human>& AllHumans, const std::vector<Object>& AllObjects, const std::map<QString, std::vector<Product>>& TakenProducts) {
+bool Saver::save(const QString &filename, const std::vector<Human>& AllHumans, const std::vector<Object>& AllObjects, const std::map<QString, std::vector<Product>>& BoughtProducts) {
     std::ofstream file(filename.toStdString());
     if (!file.is_open()) {
         return false;
@@ -452,10 +452,10 @@ bool Saver::save(const QString &filename, const std::vector<Human>& AllHumans, c
     }
     result["Objects"] = objects;
     result["Humans"] = humans;
-    if (!TakenProducts.empty()) {
+    if (!BoughtProducts.empty()) {
         // Сюда сохраним Все взятые продукты
-        Json::Value BoughtProducts(Json::arrayValue);
-        for (const auto& i: TakenProducts) {
+        Json::Value boughtProducts(Json::arrayValue);
+        for (const auto& i: BoughtProducts) {
             Json::Value sit;
             sit["Name"] = i.first.toStdString();
             Json::Value products(Json::arrayValue);
@@ -463,9 +463,9 @@ bool Saver::save(const QString &filename, const std::vector<Human>& AllHumans, c
                 saveProduct(products, j);
             }
             sit["Products"] = products;
-            BoughtProducts.append(sit);
+            boughtProducts.append(sit);
         }
-        result["BoughtProducts"] = BoughtProducts;
+        result["BoughtProducts"] = boughtProducts;
     }
     file << result << std::endl;
     file.flush();

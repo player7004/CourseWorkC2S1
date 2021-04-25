@@ -40,5 +40,5 @@ private:
     // Сохраняет человека
     void static saveHuman(Json::Value& val, const Human& res);
 public:
-    static bool save(const QString &filename, const std::vector<Human>& AllHumans, const std::vector<Object>& AllObjects, const std::map<QString, std::vector<Product>>& TakenProducts = {});
+    static bool save(const QString &filename, const std::vector<Human>& AllHumans, const std::vector<Object>& AllObjects, const std::map<QString, std::vector<Product>>& BoughtProducts = {});
 };

@@ -3,77 +3,73 @@
 	[
 		{
 			"Name" : "Artyom",
-			"Products" : 
+			"Products" : []
+		}
+	],
+	"Humans" : 
+	[
+		{
+			"Money" : 0,
+			"Name" : "Artyom",
+			"Symbol" : "H",
+			"TakenProducts" : [],
+			"ToBuyList" : 
 			[
-				{
-					"Attractiveness" : 1.0,
-					"Name" : "Something",
-					"PType" : "Milk",
-					"Price" : 90,
-					"Type" : "Product"
-				},
-				{
-					"Attractiveness" : 0.5,
-					"Name" : "Something",
-					"PType" : "Milk",
-					"Price" : 60,
-					"Type" : "Product"
-				},
-				{
-					"Attractiveness" : 0.80000001192092896,
-					"Name" : "Something",
-					"PType" : "Milk",
-					"Price" : 94,
-					"Type" : "Product"
-				},
 				{
 					"Attractiveness" : 0.30000001192092896,
 					"Name" : "Something",
 					"PType" : "Milk",
-					"Price" : 54,
+					"Price" : 80,
 					"Type" : "Product"
 				},
 				{
 					"Attractiveness" : 0.89999997615814209,
 					"Name" : "Something",
 					"PType" : "Eggs",
-					"Price" : 34,
-					"Type" : "Product"
-				},
-				{
-					"Attractiveness" : 0.5,
-					"Name" : "Something",
-					"PType" : "Eggs",
-					"Price" : 45,
-					"Type" : "Product"
-				},
-				{
-					"Attractiveness" : 1.0,
-					"Name" : "Something",
-					"PType" : "Eggs",
-					"Price" : 59,
-					"Type" : "Product"
-				},
-				{
-					"Attractiveness" : 1.0,
-					"Name" : "Something",
-					"PType" : "Eggs",
-					"Price" : 59,
+					"Price" : 64,
 					"Type" : "Product"
 				}
-			]
-		}
-	],
-	"Humans" : 
-	[
-		{
-			"Money" : 495,
-			"Name" : "Artyom",
-			"Symbol" : "H",
-			"TakenProducts" : [],
-			"ToBuyList" : [],
+			],
 			"Type" : "Human",
-			"Way" : []
+			"Way" : 
+			[
+				[
+					1,
+					0
+				],
+				[
+					1,
+					5
+				],
+				[
+					1,
+					8
+				],
+				[
+					6,
+					8
+				],
+				[
+					6,
+					5
+				],
+				[
+					6,
+					3
+				],
+				[
+					3,
+					3
+				],
+				[
+					2,
+					3
+				],
+				[
+					2,
+					0
+				]
+			]
 		},
 		{
 			"Money" : 0,
