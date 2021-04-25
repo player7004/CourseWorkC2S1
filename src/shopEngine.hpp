@@ -51,7 +51,7 @@ private:
     // Здесь лежат все имеющиеся люди
     std::vector<Human> AllHumans;
     // Здесь лежат все взятые продукты
-    std::map<QString, std::vector<Product>> AllTakenProducts;
+    std::map<QString, std::vector<Product>> BoughtProducts;
 
     // То что связано с картой в смысле её графического представления
     // Базовая карта
@@ -126,7 +126,7 @@ public:
     // Создаёт информацию о всех людях
     std::vector<QString> generateAllHumans();
     // Создаёт информацию и всех взятых продуктах
-    std::vector<QString> generateAllTakenProducts();
+    std::vector<QString> generateBoughtProducts();
     // Перестраивает карту
     void rebuild();
     // Меняет статус текущего человека

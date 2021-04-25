@@ -37,7 +37,7 @@ enum class ToDrawItem {
     // Все имеющиеся люди
     AllHumans,
     // Все взятые продукты
-    AllTakenProducts
+    BoughtProducts
 };
 
 enum class ThreadStatuses {

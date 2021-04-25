@@ -24,7 +24,7 @@ public:
     // Все имеющиеся люди
     std::vector<Human> AllHumans;
     // Все взятые продукты
-    std::map<QString, std::vector<Product>> AllTakenProducts;
+    std::map<QString, std::vector<Product>> BoughtProducts;
     // Парсит файл
     bool parse(const QString& file);
     // Конструктор

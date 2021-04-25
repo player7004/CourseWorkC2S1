@@ -7,7 +7,7 @@ ShopEngine::ShopEngine() {
     AroundCurrentHuman = {};
     AroundCurrentHumanIter = {};
     CurrentHumanWay = nullptr;
-    AllTakenProducts = {};
+    BoughtProducts = {};
     changeHStatus(HumanStatus::None);
 }
 
@@ -19,7 +19,7 @@ bool ShopEngine::open(const QString& file) {
 	if (obj.parse(file)) {
 		AllObjects = obj.AllObjects;
 		AllHumans = obj.AllHumans;
-		AllTakenProducts = obj.AllTakenProducts;
+        BoughtProducts = obj.BoughtProducts;
 		Status = MapStatus::Opened;
 		return true;
 	}
@@ -79,7 +79,7 @@ void ShopEngine::clear() {
 	Status = MapStatus::Initialized;
 	AllObjects.clear();
 	AllHumans.clear();
-	AllTakenProducts.clear();
+	BoughtProducts.clear();
 	OutMap.clear();
 	clearHuman();
 }
@@ -130,7 +130,7 @@ void ShopEngine::initializeHuman() {
         clearHuman();
     } else {
         CurrentHuman = CurrentHumanIter.base();
-        AllTakenProducts.insert({CurrentHuman->Name, {}});
+        BoughtProducts.insert({CurrentHuman->Name, {}});
         CurrentHumanWay = &CurrentHuman->Way;
         CurrentHumanIter++;
         updateOutMap();
@@ -299,7 +299,6 @@ void ShopEngine::take() {
         toDelete.push_back(i);
         for (const auto& p : allProducts) {
             CurrentHuman->TakenProducts.push_back(*p.base());
-            AllTakenProducts[CurrentHuman->Name].push_back(*p.base());
         }
     }
     for (const auto& i: toDelete) {
@@ -311,6 +310,7 @@ void ShopEngine::take() {
 void ShopEngine::buy() {
     for (const auto& i: CurrentHuman->TakenProducts) {
         CurrentHuman->Money += i.Price;
+        BoughtProducts[CurrentHuman->Name].push_back(i);
     }
     CurrentHuman->TakenProducts.clear();
     changeHStatus(HumanStatus::Looking);
@@ -431,7 +431,7 @@ void inline ShopEngine::changeHStatus(const HumanStatus& status) {
 }
 
 bool ShopEngine::save(const QString &filename) {
-    return Saver::save(filename, AllHumans, AllObjects, AllTakenProducts);
+    return Saver::save(filename, AllHumans, AllObjects, BoughtProducts);
 }
 
 ushort ShopEngine::randUshort(const ushort &a, const ushort &b) {
@@ -440,17 +440,17 @@ ushort ShopEngine::randUshort(const ushort &a, const ushort &b) {
     return range(gen);
 }
 
-std::vector<QString> ShopEngine::generateAllTakenProducts() {
+std::vector<QString> ShopEngine::generateBoughtProducts() {
     std::vector<QString> result;
     if (AllHumans.empty()) {
         result.emplace_back("None");
         return result;
     }
-    if (AllTakenProducts.empty()) {
+    if (BoughtProducts.empty()) {
         result.emplace_back("Empty");
         return result;
     }
-    for (const auto &i : AllTakenProducts) {
+    for (const auto &i : BoughtProducts) {
         result.push_back(i.first);
         if (i.second.empty()) {
             result.emplace_back("Empty");

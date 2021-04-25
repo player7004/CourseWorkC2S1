@@ -40,12 +40,10 @@ void Window::connectUI() {
 
     // Меняет режим работы на ручной
     auto SetManualModeFunc = [this] {
-        this->Mode = ModeStatuses::Manual;
         stopThread();
     };
     // Меняет режим работы на автоматический
     auto SetAutoModeFunc = [this] {
-        this->Mode = ModeStatuses::Auto;
         startThread();
     };
     connect(ManualModeButton, &QRadioButton::clicked, SetManualModeFunc);
@@ -93,9 +91,6 @@ void Window::connectUI() {
     auto NextStepFunc = [this] {
         if (this->TStatus == ThreadStatuses::Running) {
             stopThread();
-            this->Mode = ModeStatuses::Manual;
-            this->ManualModeButton->setChecked(true);
-            this->AutoModeButton->setChecked(false);
         }
         WMap.rebuild();
         this->drawGraphics();
@@ -118,7 +113,7 @@ void Window::setupUI() {
     MenuBox->addItem("Взятые продукты");
     MenuBox->addItem("Содержание стенда");
     MenuBox->addItem("Список всех людей");
-    MenuBox->addItem("Все взятые продукты");
+    MenuBox->addItem("Купленные продукты");
     // Кнопка Смены файла
     LoadShopButton = new QPushButton(this);
     LoadShopButton->setGeometry(335, 365, 78, 30);
@@ -206,8 +201,8 @@ void Window::drawInfoList() {
         for (const auto& i: WMap.generateAllHumans()) {
             InfoList->addItem(i);
         }
-    } else if (Item == ToDrawItem::AllTakenProducts) {
-        for (const auto& i: WMap.generateAllTakenProducts()) {
+    } else if (Item == ToDrawItem::BoughtProducts) {
+        for (const auto& i: WMap.generateBoughtProducts()) {
             InfoList->addItem(i);
         }
     }
@@ -230,12 +225,18 @@ void Window::ThreadFunc(Window* object) {
 
 void Window::stopThread() {
     this->TStatus = ThreadStatuses::Stopping;
+    this->Mode = ModeStatuses::Manual;
+    this->ManualModeButton->setChecked(true);
+    this->AutoModeButton->setChecked(false);
     // В теории в данном случае необязательно ждать завершения поток
     while (this->TStatus != ThreadStatuses::Sleeping);
 }
 
 void Window::startThread() {
     TStatus = ThreadStatuses::Running;
+    this->Mode = ModeStatuses::Auto;
+    this->ManualModeButton->setChecked(false);
+    this->AutoModeButton->setChecked(true);
 }
 
 int Window::openSaveInFileWindow() {

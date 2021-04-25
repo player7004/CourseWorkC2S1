@@ -302,7 +302,7 @@ bool Parser::parse(const QString& file) {
     Json::Value JFile;
     File >> JFile;
     File.close();
-    Json::Value Humans = JFile["Humans"], Objects = JFile["Objects"], TakenProducts = JFile["TakenProducts"];
+    Json::Value Humans = JFile["Humans"], Objects = JFile["Objects"], boughtProducts = JFile["BoughtProducts"];
     if (!Objects) {
         return false;
     }
@@ -327,8 +327,8 @@ bool Parser::parse(const QString& file) {
         }
     }
     // Взятые продукты
-    if (TakenProducts) {
-        for (const auto& i: TakenProducts) {
+    if (boughtProducts) {
+        for (const auto& i: boughtProducts) {
             QString name;
             std::vector<Product> taken;
             if (i["Name"]) {
@@ -349,7 +349,7 @@ bool Parser::parse(const QString& file) {
                 } catch(...) {
                 }
             }
-            AllTakenProducts.insert({name, taken});
+            BoughtProducts.insert({name, taken});
         }
     }
     return true;
@@ -454,7 +454,7 @@ bool Saver::save(const QString &filename, const std::vector<Human>& AllHumans, c
     result["Humans"] = humans;
     if (!TakenProducts.empty()) {
         // Сюда сохраним Все взятые продукты
-        Json::Value takenProducts(Json::arrayValue);
+        Json::Value BoughtProducts(Json::arrayValue);
         for (const auto& i: TakenProducts) {
             Json::Value sit;
             sit["Name"] = i.first.toStdString();
@@ -463,9 +463,9 @@ bool Saver::save(const QString &filename, const std::vector<Human>& AllHumans, c
                 saveProduct(products, j);
             }
             sit["Products"] = products;
-            takenProducts.append(sit);
+            BoughtProducts.append(sit);
         }
-        result["TakenProducts"] = takenProducts;
+        result["BoughtProducts"] = BoughtProducts;
     }
     file << result << std::endl;
     file.flush();
