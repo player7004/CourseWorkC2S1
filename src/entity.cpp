@@ -1,13 +1,5 @@
 #include "entity.hpp"
 
-bool find(const std::set<QString>& set, const QString& str) {
-    if (set.find(str) != set.cend()) {
-        return true;
-    } else {
-        return false;
-    }
-};
-
 Product::Product() {
     Price = 0;
     Attractiveness = 0;

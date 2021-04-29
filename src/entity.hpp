@@ -62,8 +62,6 @@ const std::set<QString> PTypes {
     "Undefined"
 };
 
-bool find(const std::set<const QString>& set, const QString& str);
-
 class Product {
 public:
     // Тип объекта

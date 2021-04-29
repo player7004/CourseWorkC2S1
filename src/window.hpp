@@ -1,10 +1,3 @@
-/********************************************************************************
-** Form generated from reading UI file 'MainWindowpCaIuZ.ui'
-**
-** Created by: Qt User Interface Compiler version 5.12.10
-**
-** WARNING! All changes made in this file will be lost when recompiling UI file!
-********************************************************************************/
 #pragma once
 
 #include <QtCore/QVariant>
@@ -15,13 +8,6 @@
 #include <chrono>
 #include <atomic>
 #include "shopEngine.hpp"
-
-enum class ModeStatuses {
-    // Ручной режим
-    Manual,
-    // Автоматический режим
-    Auto
-};
 
 enum class ToDrawItem {
     // Легенда карты
@@ -38,15 +24,6 @@ enum class ToDrawItem {
     AllHumans,
     // Все взятые продукты
     BoughtProducts
-};
-
-enum class ThreadStatuses {
-    // Спит
-    Sleeping,
-    // В процессе работы
-    Running,
-    // Дана команда на остановку
-    Stopping
 };
 
 QT_BEGIN_NAMESPACE
@@ -68,15 +45,10 @@ public:
     // Кнопка выйти
     QPushButton* QuitButton;
     // Кнопка ручного режима
-    QRadioButton* ManualModeButton;
-    // Кнопка сохранения в файл
-    QRadioButton* AutoModeButton;
     // Окно с графикой
     QListWidget* GraphicView;
     // Конструктор
     Window();
-    // Закрытие окна
-    void closeEvent(QCloseEvent* event) override;
 
     // Устанавливает базовые значения
     // Mode
@@ -86,8 +58,6 @@ public:
     void setupBase();
     // Очищает окно для загрузки нового магазина
     void clearWindow();
-    // Режим переключения
-    ModeStatuses Mode;
     // Отображаемый объект
     ToDrawItem Item;
     // Очищает окно графики
@@ -98,20 +68,11 @@ public:
     void drawGraphics();
     // Отображает лист информации
     void drawInfoList();
-    // Поток для автоматического режима
-    std::thread* Worker = nullptr;
-    // Статус потока
-    std::atomic<ThreadStatuses> TStatus;
-    // Функция для потока
-    static void ThreadFunc(Window* object);
-    // Останавливает поток
-    void stopThread();
-    // Запускает поток
-    void startThread();
-    // Индикатор работы потока
-    std::atomic<bool> running;
     // Карта
     ShopEngine WMap;
+
+    std::vector<std::pair<std::unique_ptr<QListWidgetItem>, std::unique_ptr<QLabel>>> Modules;
+    void createModules();
 
     // Открыает окно ошибки загрузки карты
     static int openFileErrorWindow();

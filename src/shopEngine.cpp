@@ -185,6 +185,8 @@ void ShopEngine::placeHuman() {
     auto pos = CurrentHumanWay->begin().base();
     updateOutMap();
     OutMap[pos->first][pos->second] = CurrentHuman->Symbol;
+    OutMap[pos->first].insert(pos->second ? pos->second: 0, "<b>");
+    OutMap[pos->first].insert(pos->second + 4, "</b>");
 }
 
 void ShopEngine::look() {
