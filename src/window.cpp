@@ -44,7 +44,7 @@ void Window::connectUI() {
         if (WMap.generateAllHumans()[0] != "Empty" and WMap.generateAllHumans()[0] != "None") {
             switch(openSaveInFileWindow()) {
                 case QMessageBox::Save: {
-                    QString str = QFileDialog::getOpenFileName(this, "Выберите файл для сохранения", "", "*.json");
+                    QString str = QFileDialog::getOpenFileName(this, "Выберите файл магазина", "", "*.json");
                     if (str.isEmpty()) {
                         break;
                     }
@@ -55,7 +55,7 @@ void Window::connectUI() {
                     break;
             }
         }
-        QString str = QFileDialog::getOpenFileName(this, "Choose Shop file", "", "*.json");
+        QString str = QFileDialog::getOpenFileName(this, "Выберите файл магазина", "", "*.json");
         this->clearWindow();
         WMap.clear();
         if (!WMap.open(str) or !WMap.create()) {
@@ -127,6 +127,7 @@ void Window::setupBase() {
 }
 
 void Window::clearWindow() {
+    resetGraphic();
     InfoList->clear();
 }
 

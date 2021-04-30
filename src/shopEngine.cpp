@@ -341,7 +341,7 @@ std::vector<QString> ShopEngine::generateMapLegend() {
     // Вносим людей
     for (const auto& i : AllHumans) {
         if (Dict.find(i.Symbol) == Dict.end()) {
-            Dict.insert({ i.Symbol, i.Type });
+            Dict.insert({ i.Symbol, i.Name + "(" + i.Type + ")"});
         }
     }
     // Результат

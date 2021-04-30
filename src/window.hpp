@@ -62,7 +62,9 @@ public:
     ToDrawItem Item;
     // Очищает окно графики
     void inline resetGraphic() {
-        GraphicView->clear();
+        for (auto& i: Modules) {
+            i.second->setText("");
+        }
     };
     // Отрисовывает графику
     void drawGraphics();
@@ -71,7 +73,9 @@ public:
     // Карта
     ShopEngine WMap;
 
+    // Модули оторажения и их содержимое
     std::vector<std::pair<std::unique_ptr<QListWidgetItem>, std::unique_ptr<QLabel>>> Modules;
+    // Создаёт модули отображение
     void createModules();
 
     // Открыает окно ошибки загрузки карты

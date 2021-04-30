@@ -3,64 +3,78 @@
 	[
 		{
 			"Name" : "Artyom",
-			"Products" : []
-		}
-	],
-	"Humans" : 
-	[
-		{
-			"Money" : 0,
-			"Name" : "Artyom",
-			"Symbol" : "H",
-			"TakenProducts" : [],
-			"ToBuyList" : 
+			"Products" : 
 			[
+				{
+					"Attractiveness" : 1.0,
+					"Name" : "Something",
+					"PType" : "Milk",
+					"Price" : 90,
+					"Type" : "Product"
+				},
+				{
+					"Attractiveness" : 0.5,
+					"Name" : "Something",
+					"PType" : "Milk",
+					"Price" : 60,
+					"Type" : "Product"
+				},
+				{
+					"Attractiveness" : 0.80000001192092896,
+					"Name" : "Something",
+					"PType" : "Milk",
+					"Price" : 94,
+					"Type" : "Product"
+				},
 				{
 					"Attractiveness" : 0.30000001192092896,
 					"Name" : "Something",
 					"PType" : "Milk",
-					"Price" : 80,
+					"Price" : 54,
 					"Type" : "Product"
 				},
 				{
 					"Attractiveness" : 0.89999997615814209,
 					"Name" : "Something",
 					"PType" : "Eggs",
-					"Price" : 64,
+					"Price" : 34,
+					"Type" : "Product"
+				},
+				{
+					"Attractiveness" : 0.5,
+					"Name" : "Something",
+					"PType" : "Eggs",
+					"Price" : 45,
+					"Type" : "Product"
+				},
+				{
+					"Attractiveness" : 1.0,
+					"Name" : "Something",
+					"PType" : "Eggs",
+					"Price" : 59,
+					"Type" : "Product"
+				},
+				{
+					"Attractiveness" : 1.0,
+					"Name" : "Something",
+					"PType" : "Eggs",
+					"Price" : 59,
 					"Type" : "Product"
 				}
-			],
+			]
+		}
+	],
+	"Humans" : 
+	[
+		{
+			"Money" : 495,
+			"Name" : "Artyom",
+			"Symbol" : "A",
+			"TakenProducts" : [],
+			"ToBuyList" : [],
 			"Type" : "Human",
 			"Way" : 
 			[
-				[
-					1,
-					0
-				],
-				[
-					1,
-					5
-				],
-				[
-					1,
-					8
-				],
-				[
-					6,
-					8
-				],
-				[
-					6,
-					5
-				],
-				[
-					6,
-					3
-				],
-				[
-					3,
-					3
-				],
 				[
 					2,
 					3
@@ -74,7 +88,7 @@
 		{
 			"Money" : 0,
 			"Name" : "Igor",
-			"Symbol" : "H",
+			"Symbol" : "I",
 			"TakenProducts" : [],
 			"ToBuyList" : 
 			[
